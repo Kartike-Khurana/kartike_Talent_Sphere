@@ -6,23 +6,20 @@ namespace TalentSphere.Models
 {
     public class CareerPlan
     {
-        [Key]
         public int PlanID { get; set; }
 
-        [Required]
         public int EmployeeID { get; set; }
 
-        [Required]
         public string Goals { get; set; }
 
-        [StringLength(255)]
         public string Timeline { get; set; }
 
-        [StringLength(50)]
         public string Status { get; set; }
 
-        // Navigation Property
-        [ForeignKey("EmployeeID")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public virtual Employee Employee { get; set; }
     }
 }

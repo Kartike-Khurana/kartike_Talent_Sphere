@@ -2,27 +2,26 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TalentSphere.Models;
+using TalentSphere.Enums;
 
-namespace TalentSphereAPI.Models
+namespace TalentSphere.Models
 {
     public class Employee
     {
-        [Key]
         public int EmployeeID { get; set; }
 
-        [Required]
-        [StringLength(255)]
         public string Name { get; set; }
 
-        [StringLength(100)]
         public string Department { get; set; }
 
-        [StringLength(100)]
         public string Position { get; set; }
 
         public DateTime? JoinDate { get; set; }
+        
+        public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [StringLength(50)]
-        public string Status { get; set; } = "Active";
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

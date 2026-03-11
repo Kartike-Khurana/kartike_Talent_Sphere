@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.OpenApi;
 
 namespace TalentSphere.Models
@@ -6,17 +7,17 @@ namespace TalentSphere.Models
 	public class Report
 	{
 
-		[Key]
 		public int ReportID { get; set; }
 
-		[Required]
-		[StringLength(100)]
 		public string Scope { get; set; }
 
 		public string Metrics { get; set; }
 
-		[Required]
 		public DateOnly GenerateDate { get; set; }
+
+		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+		public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
 	}
 }

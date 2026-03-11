@@ -6,23 +6,22 @@ namespace TalentSphere.Models
 {
     public class ComplianceRecord
     {
-        [Key]
         public int ComplianceID { get; set; }
- 
-        [Required]
+
         public int EmployeeID { get; set; }
- 
-        [Required]
+
         public string Type { get; set; } // Policy / Document
- 
+
         public string Result { get; set; }
- 
+
         public DateTime Date { get; set; }
- 
+
         public string Notes { get; set; }
- 
-        // Navigation Property
-        [ForeignKey("EmployeeID")]
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public Employee Employee { get; set; }
     }
 }

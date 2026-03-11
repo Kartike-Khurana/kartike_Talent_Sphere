@@ -1,18 +1,18 @@
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TalentSphereAPI.Models
+namespace TalentSphere.Models
 {
     public class Role
     {
-        [Key]
         public int RoleID { get; set; }
 
-        [Required]
-        [StringLength(50)]
         public string RoleName { get; set; }
 
         public ICollection<User> Users { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

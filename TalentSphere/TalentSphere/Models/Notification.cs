@@ -2,12 +2,12 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TalentSphere.Enums;
 
 namespace TalentSphere.Models
 {
     public class Notification
     {
-        [Key]
         public int NotificationID { get; set; }
 
         public int UserID { get; set; }
@@ -16,15 +16,14 @@ namespace TalentSphere.Models
 
         public string Message { get; set; }
 
-        [StringLength(100)]
         public string Category { get; set; }
 
-        [StringLength(50)]
-        public string Status { get; set; } = "Unread";
+        public NotificationStatus Status { get; set; } = NotificationStatus.Unread;
 
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [ForeignKey("UserID")]
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+
         public virtual User User { get; set; }
     }
 }

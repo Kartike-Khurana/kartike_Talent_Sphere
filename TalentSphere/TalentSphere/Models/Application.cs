@@ -25,7 +25,7 @@ namespace TalentSphere.Models
 
         public DateTime? UpdatedAt { get; set; }
 
-        public Boolean IsDeleted { get; set; }
+        public bool IsDeleted { get; set; }
     }
     
 }

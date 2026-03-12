@@ -15,6 +15,7 @@ namespace TalentSphere.Config.Configurations
             builder.Property(a => a.SubmittedDate).IsRequired();
 
             builder.Property(a => a.Status)
+                   .HasConversion<string>()
                    .HasDefaultValue(ApplicationStatus.Pending)
                    .IsRequired();
 

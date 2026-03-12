@@ -14,13 +14,13 @@ namespace TalentSphere.Config.Configurations
 
             builder.Property(e => e.Date).IsRequired();
 
-            builder.Property(e => e.status).HasDefaultValue(EnrollmentStatus.Enrolled).IsRequired();
+            builder.Property(e => e.status).HasConversion<string>().HasDefaultValue(EnrollmentStatus.Enrolled).IsRequired();
 
             builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-            builder.HasOne<Training>().WithMany().HasForeignKey(e => e.TrainingID).OnDelete(DeleteBehavior.Cascade);
-            builder.HasOne<Employee>().WithMany().HasForeignKey(e => e.EmployeeID).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne<Training>().WithMany().HasForeignKey(e => e.TrainingID).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne<Employee>().WithMany().HasForeignKey(e => e.EmployeeID).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

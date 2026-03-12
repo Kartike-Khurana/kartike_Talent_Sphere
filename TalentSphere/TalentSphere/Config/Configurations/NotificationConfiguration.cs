@@ -37,7 +37,7 @@ namespace TalentSphere.Config.Configurations
             // Global Filter: Deleted records automatically hides
             builder.HasQueryFilter(n => !n.IsDeleted);
 
-            builder.HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserID).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserID).OnDelete(DeleteBehavior.Restrict);
 
             //  Performance Indexing
             // Index UserID to speed up fetching notifications for a specific user.

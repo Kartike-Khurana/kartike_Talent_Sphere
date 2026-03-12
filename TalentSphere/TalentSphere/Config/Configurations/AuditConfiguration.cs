@@ -16,6 +16,7 @@ namespace TalentSphere.Config.Configurations
             builder.Property(a => a.Findings).HasMaxLength(1000);
             builder.Property(a => a.Date).IsRequired();
             builder.Property(a => a.Status)
+                   .HasConversion<string>()
                    .HasDefaultValue(AuditStatus.Pending)
                    .IsRequired();
             builder.Property(a => a.IsDeleted)
@@ -27,7 +28,7 @@ namespace TalentSphere.Config.Configurations
             builder.HasOne(a => a.HR)
                    .WithMany()
                    .HasForeignKey(a => a.HRID)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

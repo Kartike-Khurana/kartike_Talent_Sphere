@@ -15,6 +15,7 @@ namespace TalentSphere.Config.Configurations
             builder.Property(r => r.FileURI).IsRequired().HasMaxLength(500);
 
             builder.Property(r => r.Status)
+                   .HasConversion<string>()
                    .HasDefaultValue(ResumeStatus.Active)
                    .IsRequired();
 

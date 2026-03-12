@@ -15,14 +15,14 @@ namespace TalentSphere.Config.Configurations
             builder.Property(i => i.Date).IsRequired();
             builder.Property(i => i.Time).IsRequired();
 
-            builder.Property(i => i.Status).HasDefaultValue(InterviewStatus.Scheduled).IsRequired();
+            builder.Property(i => i.Status).HasConversion<string>().HasDefaultValue(InterviewStatus.Scheduled).IsRequired();
 
-            builder.property(i => i.IsDeleted).HasDefaultValue(false).IsRequired();
+            builder.Property(i => i.IsDeleted).HasDefaultValue(false).IsRequired();
 
             builder.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(i => i.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-            builder.HasOne(i => i.Application).WithMany().HasForeignKey(i => i.ApplicationID).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(i => i.Application).WithMany().HasForeignKey(i => i.ApplicationID).OnDelete(DeleteBehavior.Restrict);
             builder.HasOne(i => i.Interviewer).WithMany().HasForeignKey(i => i.InterviewerID).OnDelete(DeleteBehavior.Restrict);
         }
     }

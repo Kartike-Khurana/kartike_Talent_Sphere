@@ -16,8 +16,9 @@ namespace TalentSphere.Config.Configurations
 
             builder.Property(s => s.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(s => s.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property<bool>("IsDeleted").HasDefaultValue(false);
 
-            builder.HasOne(s => s.Application).WithMany().HasForeignKey(s => s.ApplicationID).OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(s => s.Application).WithMany().HasForeignKey(s => s.ApplicationID).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

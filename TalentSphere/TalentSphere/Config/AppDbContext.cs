@@ -36,6 +36,7 @@ namespace TalentSphere.Config
             modelBuilder.ApplyConfiguration(new EmployeeDocConfiguration());
             modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
             modelBuilder.ApplyConfiguration(new AuditConfiguration());
+            modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         }
 
         public DbSet<SuccessionPlan> SuccessionPlans { get; set; }
@@ -58,5 +59,6 @@ namespace TalentSphere.Config
         public DbSet<User> Users { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Audit> Audits { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
     }
 }

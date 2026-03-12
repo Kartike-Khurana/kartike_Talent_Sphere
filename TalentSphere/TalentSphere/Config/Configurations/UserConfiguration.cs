@@ -20,6 +20,11 @@ namespace TalentSphere.Config.Configurations
             builder.Property(u => u.Email)
                    .IsRequired()
                    .HasMaxLength(255);
+              
+            builder.Property(u => u.Password)
+                   .IsRequired()
+                   .HasMaxLength(255);
+            
 
             builder.HasIndex(u => u.Email).IsUnique();
 

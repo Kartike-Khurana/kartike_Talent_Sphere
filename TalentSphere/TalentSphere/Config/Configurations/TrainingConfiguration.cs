@@ -15,7 +15,7 @@ namespace TalentSphere.Config.Configurations
             builder.Property(t => t.Title).IsRequired().HasMaxLength(255);
             builder.Property(t => t.Duration).IsRequired().HasMaxLength(100);
 
-            builder.Property(t => t.status).HasDefaultValue(TrainingStatus.Planned).IsRequired();
+            builder.Property(t => t.status).HasConversion<string>().HasDefaultValue(TrainingStatus.Planned).IsRequired();
 
             builder.Property(t => t.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(t => t.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");

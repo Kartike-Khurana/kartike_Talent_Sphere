@@ -11,6 +11,7 @@ namespace TalentSphere.Config.Configurations
         {
             builder.ToTable("Jobs");
             builder.HasKey(j => j.JobID);
+            builder.Property(j=> j.JobID).ValueGeneratedOnAdd();
 
             builder.Property(j => j.Title).IsRequired().HasMaxLength(255);
             builder.Property(j => j.Department).IsRequired().HasMaxLength(100);
@@ -19,6 +20,11 @@ namespace TalentSphere.Config.Configurations
 
             builder.Property(j => j.Status)
                    .HasDefaultValue(JobStatus.Open);
+
+            builder.Property(j => j.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property(j => j.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property<bool>("IsDeleted").HasDefaultValue(false);
+
         }
     }
 }

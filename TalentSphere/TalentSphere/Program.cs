@@ -4,13 +4,15 @@ using TalentSphere.Repositories;
 using TalentSphere.Interfaces;
 using TalentSphere.Services;
 using AutoMapper;
+using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(
-    options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("AppDb")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb"))
+           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 
 builder.Services.AddControllers();
@@ -24,6 +26,20 @@ builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
 builder.Services.AddScoped<IInterviewService, InterviewService>();
 builder.Services.AddScoped<ISelectionRepository, SelectionRepository>();
 builder.Services.AddScoped<ISelectionService, SelectionService>();
+
+//Register report repository
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
+builder.Services.AddScoped<ITrainingRepository, TrainingRepository>();
+builder.Services.AddScoped<ITrainingService, TrainingService>();
+
+builder.Services.AddScoped<ISuccessionPlanRepository, SuccessionPlanRepository>();
+builder.Services.AddScoped<ISuccessionPlanService, SuccessionPlanService>();
+
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+
 
 // AutoMapper registration - scan assembly for profiles in the Mappers folder
 builder.Services.AddAutoMapper(typeof(Program));

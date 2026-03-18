@@ -4,7 +4,8 @@ using AutoMapper;
 using TalentSphere.DTOs;
 using TalentSphere.Enums;
 using TalentSphere.Models;
-using TalentSphere.Interfaces;
+using TalentSphere.Services.Interfaces;
+using TalentSphere.Repositories.Interfaces;
 
 namespace TalentSphere.Services
 {

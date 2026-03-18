@@ -3,7 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
-using TalentSphere.Services;
+using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {

@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
-using TalentSphere.Interfaces;
+using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Services
 {

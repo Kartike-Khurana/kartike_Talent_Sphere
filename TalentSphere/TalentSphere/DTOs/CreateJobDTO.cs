@@ -1,4 +1,4 @@
-namespace TalentSphere.DTOs
+                                                        namespace TalentSphere.DTOs
 {
     public class CreateJobDTO
     {

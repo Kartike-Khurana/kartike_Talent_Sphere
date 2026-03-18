@@ -12,9 +12,9 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<AppDbContext>(
-    options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("AppDb")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb"))
+           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 
 builder.Services.AddControllers()
@@ -51,6 +51,33 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 // Register UserRole repository and service
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+builder.Services.AddScoped<IComplianceRecordRepository, ComplianceRecordRepository>();
+builder.Services.AddScoped<IComplianceRecordService, ComplianceRecordService>();
+builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+
+//Register report repository
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
+builder.Services.AddScoped<ITrainingRepository, TrainingRepository>();
+builder.Services.AddScoped<ITrainingService, TrainingService>();
+
+builder.Services.AddScoped<ISuccessionPlanRepository, SuccessionPlanRepository>();
+builder.Services.AddScoped<ISuccessionPlanService, SuccessionPlanService>();
+
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+
+
+builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+
+builder.Services.AddScoped<IResumeRepository, ResumeRepository>();
+builder.Services.AddScoped<IResumeService, ResumeService>();
+
+builder.Services.AddScoped<IScreeningRepository, ScreeningRepository>();
+builder.Services.AddScoped<IScreeningService, ScreeningService>();
 
 // AutoMapper registration - scan assembly for profiles in the Mappers folder
 builder.Services.AddAutoMapper(typeof(Program));

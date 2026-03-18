@@ -2,11 +2,10 @@ using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 
-namespace TalentSphere.Services
+namespace TalentSphere.Services.Interfaces;
+
+public interface IJobService
 {
-    public interface IJobService
-    {
-        Task<Job> CreateJobAsync(CreateJobDTO dto);
-        Task<Job> GetByIdAsync(int id);
-    }
+    Task<Job> CreateJobAsync(CreateJobDTO dto);
+    Task<Job> GetByIdAsync(int id);
 }

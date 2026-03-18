@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TalentSphere.Config;
 using TalentSphere.Models;
-using TalentSphere.Interfaces;
+using TalentSphere.Repositories.Interfaces;
 
 namespace TalentSphere.Repositories
 {

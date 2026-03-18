@@ -4,8 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Suppress specific NuGet warning for known advisory when package version must remain -->
+    <!-- Suppress NU1903 vulnerability warning for AutoMapper 12.0.1 per requirement to keep that version -->
     <NoWarn>$(NoWarn);NU1903</NoWarn>
+    <!-- Suppress known-package vulnerability warning for AutoMapper 12.0.1 per user request -->
+    <NoWarn>NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +15,13 @@
     <Content Remove="Interface\**" />
     <EmbeddedResource Remove="Interface\**" />
     <None Remove="Interface\**" />
+    <Compile Remove="Profiles\**" />
+    <Content Remove="Interface\**" />
+    <Content Remove="Profiles\**" />
+    <EmbeddedResource Remove="Interface\**" />
+    <EmbeddedResource Remove="Profiles\**" />
+    <None Remove="Interface\**" />
+    <None Remove="Profiles\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +44,11 @@
     <Folder Include="Middleware\" />
     <Folder Include="Profiles\" />
     <Folder Include="Middleware\" />
+    <Folder Include="Interface\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="Middleware\" />
+    <Folder Include="Services\" />
+    <Folder Include="Repositories\" />
   </ItemGroup>
 
 </Project>

@@ -2,11 +2,10 @@ using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 
-namespace TalentSphere.Services
+namespace TalentSphere.Services.Interfaces;
+
+public interface ISelectionService
 {
-    public interface ISelectionService
-    {
-        Task<Selection> CreateSelectionAsync(CreateSelectionDTO dto);
-        Task<Selection> GetByIdAsync(int id);
-    }
+    Task<Selection> CreateSelectionAsync(CreateSelectionDTO dto);
+    Task<Selection> GetByIdAsync(int id);
 }

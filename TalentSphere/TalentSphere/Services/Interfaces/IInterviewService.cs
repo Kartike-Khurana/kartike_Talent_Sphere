@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 
-namespace TalentSphere.Services
+namespace TalentSphere.Services.Interfaces
 {
     public interface IInterviewService
     {

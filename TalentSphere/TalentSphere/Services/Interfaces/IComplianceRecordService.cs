@@ -1,6 +1,6 @@
 using TalentSphere.DTOs;
 
-namespace TalentSphere.Interfaces
+namespace TalentSphere.Services.Interfaces
 {
     public interface IComplianceRecordService
     {

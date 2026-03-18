@@ -1,6 +1,6 @@
 using TalentSphere.Models;
 
-namespace TalentSphere.Interfaces
+namespace TalentSphere.Repositories.Interfaces
 {
     public interface IComplianceRecordRepository
     {

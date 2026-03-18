@@ -1,7 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TalentSphere.Config;
-using TalentSphere.Interfaces;
 using TalentSphere.Repositories.Interfaces;
 using TalentSphere.Mappers;
 using TalentSphere.Repositories;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using AutoMapper;
 using TalentSphere.DTOs;
@@ -8,28 +8,29 @@ using TalentSphere.Repositories.Interfaces;
 
 namespace TalentSphere.Services
 {
-    public class SelectionService : ISelectionService
+    public class ResumeService : IResumeService
     {
-        private readonly ISelectionRepository _repository;
+        private readonly IResumeRepository _repository;
         private readonly IMapper _mapper;
 
-        public SelectionService(ISelectionRepository repository, IMapper mapper)
+        public ResumeService(IResumeRepository repository, IMapper mapper)
         {
             _repository = repository;
             _mapper = mapper;
         }
 
-        public async Task<Selection> CreateSelectionAsync(CreateSelectionDTO dto)
+        public async Task<Resume> CreateResumeAsync(CreateResumeDTO dto)
         {
-            var selection = _mapper.Map<Selection>(dto);
-            selection.CreatedAt = DateTime.UtcNow;
+            var resume = _mapper.Map<Resume>(dto);
+            resume.CreatedAt = DateTime.UtcNow;
+            resume.IsDeleted = false;
 
-            var added = await _repository.AddAsync(selection);
+            var added = await _repository.AddAsync(resume);
             await _repository.SaveChangesAsync();
             return added;
         }
 
-        public async Task<Selection> GetByIdAsync(int id)
+        public async Task<Resume> GetByIdAsync(int id)
         {
             return await _repository.GetByIdAsync(id);
         }

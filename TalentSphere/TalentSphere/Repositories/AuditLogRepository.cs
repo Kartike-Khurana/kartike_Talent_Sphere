@@ -15,11 +15,7 @@ namespace TalentSphere.Repositories
             _context = context;
         }
 
-        public async Task<AuditLog> AddAsync(AuditLog auditLog)
-        {
-            var entity = (await _context.Set<AuditLog>().AddAsync(auditLog)).Entity;
-            return entity;
-        }
+        // AddAsync removed: audit logs should not be created via repository public API.
 
         public async Task<AuditLog> GetByIdAsync(int id)
         {

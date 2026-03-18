@@ -5,7 +5,6 @@ using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
-using TalentSphere.DTOs;
 namespace TalentSphere.Controllers
 {
     [ApiController]

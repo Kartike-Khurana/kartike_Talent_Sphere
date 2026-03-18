@@ -83,10 +83,6 @@ namespace TalentSphere.Mappers
             CreateMap<EmployeeDocument, EmployeeDocumentResponseDto>()
                 .ReverseMap();
 
-            // Audit mappings
-            CreateMap<CreateAuditLogDTO, AuditLog>()
-                .ReverseMap();
-
             // AuditLog -> Response DTO
             CreateMap<AuditLog, AuditLogResponseDto>()
                 .ReverseMap();

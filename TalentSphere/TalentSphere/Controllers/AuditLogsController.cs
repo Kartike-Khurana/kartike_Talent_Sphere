@@ -16,16 +16,7 @@ namespace TalentSphere.Controllers
             _auditLogService = auditLogService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateAuditLogDTO dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var audit = await _auditLogService.CreateAuditLogAsync(dto);
-
-            return CreatedAtAction(nameof(GetById), new { id = audit.AuditID }, audit);
-        }
+        // POST method removed by request. Audit logs should not be created via public API endpoint.
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -50,25 +41,7 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateAuditLogDTO dto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var updated = await _auditLogService.UpdateAuditLogAsync(id, dto);
-                if (updated == null)
-                    return NotFound(new { message = $"Audit log with ID {id} not found." });
-
-                return Ok(new { message = "Audit log updated successfully.", data = updated });
-            }
-            catch (System.Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while updating the audit log.", Error = ex.Message });
-            }
-        }
+        // PUT method removed by request. Audit logs are immutable via API.
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

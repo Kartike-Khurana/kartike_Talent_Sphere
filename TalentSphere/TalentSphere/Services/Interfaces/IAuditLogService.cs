@@ -7,10 +7,9 @@ namespace TalentSphere.Services.Interfaces
 {
     public interface IAuditLogService
     {
-        Task<AuditLogResponseDto> CreateAuditLogAsync(CreateAuditLogDTO dto);
+        // Audit log creation via public service removed.
         Task<AuditLogResponseDto> GetByIdAsync(int id);
         Task<IEnumerable<AuditLogResponseDto>> GetAllAsync();
-        Task<AuditLogResponseDto> UpdateAuditLogAsync(int id, UpdateAuditLogDTO dto);
         Task<bool> DeleteAuditLogAsync(int id);
     }
 }

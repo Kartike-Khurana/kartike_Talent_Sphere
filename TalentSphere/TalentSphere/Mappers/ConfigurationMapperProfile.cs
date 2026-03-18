@@ -2,6 +2,7 @@
 using TalentSphere.Models;
 using TalentSphere.DTOs;
 using TalentSphere.Utils;
+
 namespace TalentSphere.Mappers
 {
     public class ConfigurationMapperProfile : Profile
@@ -11,17 +12,25 @@ namespace TalentSphere.Mappers
 
             // ComplianceRecord mappings
             CreateMap<CreateComplianceRecordDTO, ComplianceRecord>()
-           .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
-           .ForMember(dest => dest.Result, opt => opt.MapFrom(src => src.Result))
-           .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date))
-           .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
-           .ForMember(dest => dest.EmployeeID, opt => opt.MapFrom(src => src.EmployeeID))
-           .ReverseMap();
+                .ReverseMap();
+
+            CreateMap<UpdateComplianceRecordDTO, ComplianceRecord>()
+                .ReverseMap();
+
+            CreateMap<ComplianceRecord, ComplianceRecordResponseDTO>()
+                .ReverseMap();
+
 
             // Audit mappings
             CreateMap<CreateAuditDTO, Audit>()
                 .ReverseMap();
 
+            CreateMap<UpdateAuditDTO, Audit>()
+                .ReverseMap();
+
+            CreateMap<Audit, AuditResponseDTO>()
+
+                .ReverseMap();
             // Job mappings
             CreateMap<CreateJobDTO, Job>()
                 .ReverseMap();
@@ -106,7 +115,7 @@ namespace TalentSphere.Mappers
 
             //Training mappings
             CreateMap<CreateTrainingDTO, Training>()
-                            .ReverseMap();
+                     .ReverseMap();
 
             //Enrollment mappings
             CreateMap<CreateEnrollmentDTO, Enrollment>()
@@ -116,9 +125,6 @@ namespace TalentSphere.Mappers
             CreateMap<CreateSuccessionPlanDTO, SuccessionPlan>()
                     .ReverseMap();
 
-            
-
-            
         }
     }
 }

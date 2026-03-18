@@ -3,7 +3,7 @@ using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs
 {
-    public class CreateAuditDTO
+    public class UpdateAuditDTO
     {
         [Required]
         public int HRID { get; set; }
@@ -20,6 +20,6 @@ namespace TalentSphere.DTOs
         [Required]
         public AuditStatus Status { get; set; }
 
-
+     
     }
 }

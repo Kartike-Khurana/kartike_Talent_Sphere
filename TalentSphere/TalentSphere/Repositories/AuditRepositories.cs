@@ -16,21 +16,36 @@ namespace TalentSphere.Repositories
 
         public async Task<Audit> AddAuditAsync(Audit audit)
         {
-            try
-            {
                 await _context.Audits.AddAsync(audit);
                 await _context.SaveChangesAsync();
                 return audit;
-            }
-            catch (DbUpdateException ex)
-            {
+            
+        }
 
-                throw new Exception("Database update failed. Please check if the HRID exists and all required fields are provided.", ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("An error occurred while saving the audit record.", ex);
-            }
+        public async Task<Audit> GetAuditByIdAsync(int id)
+        {
+            return await _context.Audits.FirstOrDefaultAsync(a => a.AuditID == id && !a.IsDeleted);
+        }
+
+        public async Task<IEnumerable<Audit>> GetAllAuditsAsync()
+        {
+            return await _context.Audits.Where(a => !a.IsDeleted).ToListAsync();
+        }
+
+        public async Task UpdateAuditAsync(Audit audit)
+        {
+            _context.Audits.Update(audit);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> DeleteAuditAsync(int id)
+        {
+            var audit = await _context.Audits.FindAsync(id);
+            if (audit == null || audit.IsDeleted) return false;
+            audit.IsDeleted = true;
+            _context.Audits.Update(audit);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

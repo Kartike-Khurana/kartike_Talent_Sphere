@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TalentSphere.Config;
-using TalentSphere.Interfaces;
 using TalentSphere.Repositories.Interfaces; 
 using TalentSphere.Models;
 

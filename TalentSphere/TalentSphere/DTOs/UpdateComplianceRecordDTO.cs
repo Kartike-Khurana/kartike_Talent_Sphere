@@ -1,9 +1,9 @@
-﻿using TalentSphere.Enums;
 using System.ComponentModel.DataAnnotations;
+using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs
 {
-    public class CreateComplianceRecordDTO
+    public class UpdateComplianceRecordDTO
     {
         [Required]
         public int EmployeeID { get; set; }

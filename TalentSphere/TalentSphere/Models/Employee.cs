@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TalentSphere.Models;
 using TalentSphere.Enums;
+using TalentSphere.DTOs;
 
 namespace TalentSphere.Models
 {
@@ -25,5 +26,6 @@ namespace TalentSphere.Models
         public DateTime? UpdatedAt { get; set; }
         
         public bool IsDeleted { get; set;  }
+
     }
 }

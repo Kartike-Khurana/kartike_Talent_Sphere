@@ -14,24 +14,37 @@ namespace TalentSphere.Repositories
             _context = context;
         }
 
-        public async Task<ComplianceRecord> AddComplianceRecordAsync(ComplianceRecord record)
+        public async Task<ComplianceRecord> AddComplianceRecordAsync(ComplianceRecord compilanceRecord)
         {
-            try
-            {
-                await _context.ComplianceRecords.AddAsync(record);
+                await _context.ComplianceRecords.AddAsync(compilanceRecord);
                 await _context.SaveChangesAsync();
-                return record;
-            }
-            catch (DbUpdateException ex)
-            {
-                
-                throw new Exception("Database update failed. Please check if the EmployeeID exists and all fields are valid.", ex);
-            }
-            catch (Exception ex)
-            {
-            
-                throw new Exception("An error occurred while saving the compliance record.", ex);
-            }
+                return compilanceRecord;
+        }
+
+        public async Task<ComplianceRecord> GetComplianceRecordByIdAsync(int id)
+        {
+            return await _context.ComplianceRecords.FirstOrDefaultAsync(c => c.ComplianceID == id && !c.IsDeleted);
+        }
+
+        public async Task<IEnumerable<ComplianceRecord>> GetAllComplianceRecordsAsync()
+        {
+            return await _context.ComplianceRecords.Where(c => !c.IsDeleted).ToListAsync();
+        }
+
+        public async Task UpdateComplianceRecordAsync(ComplianceRecord complianceRecord)
+        {
+            _context.ComplianceRecords.Update(complianceRecord);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> DeleteComplianceRecordAsync(int ComplianceID)
+        {
+            var record = await _context.ComplianceRecords.FindAsync(ComplianceID);
+            if (record == null || record.IsDeleted) return false;
+            record.IsDeleted = true;
+            _context.ComplianceRecords.Update(record);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

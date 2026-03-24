@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <Compile Remove="Interface\**" />
+    <Content Remove="Interface\**" />
+    <EmbeddedResource Remove="Interface\**" />
+    <None Remove="Interface\**" />
     <Compile Remove="Profiles\**" />
     <Content Remove="Interface\**" />
     <Content Remove="Profiles\**" />
@@ -39,7 +42,6 @@
 
   <ItemGroup>
     <Folder Include="Middleware\" />
-    <Folder Include="Interface\" />
     <Folder Include="Profiles\" />
     <Folder Include="Middleware\" />
     <Folder Include="Interface\" />

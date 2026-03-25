@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Services.Interfaces;
 
@@ -6,6 +7,7 @@ namespace TalentSphere.Controllers
 {
 	[ApiController]
 	[Route("api/reports")]
+	
 	
 	public class ReportsController : ControllerBase
 	{
@@ -16,6 +18,7 @@ namespace TalentSphere.Controllers
 			_reportService = reportService;
 		}
 		[HttpPost]
+		[Authorize(Roles = "Admin,HR")]
 		//to insert the the report data in database 
 		public async Task<IActionResult> Create([FromBody] CreateReportDTO dto)
 		{
@@ -33,7 +36,7 @@ namespace TalentSphere.Controllers
 			}
 		}
 		//to get the report data by id from database
-
+		[Authorize(Roles = "Admin,HR,Candidate")]
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetById(int id)
 		{
@@ -53,6 +56,7 @@ namespace TalentSphere.Controllers
 			}
 		}
 		[HttpGet]
+		[Authorize(Roles = "Admin,HR")]
 		public async Task<IActionResult> GetAll(){
   try{
 				var reports = await _reportService.GetAllAsync();
@@ -64,6 +68,7 @@ namespace TalentSphere.Controllers
 
 
 		[HttpPut("{id}")]
+		[Authorize(Roles = "Admin,HR")]
 		public async Task<IActionResult> Update(int id , [FromBody] UpdateReportDTO dto)
 		{
 		if(!ModelState.IsValid){
@@ -80,6 +85,7 @@ namespace TalentSphere.Controllers
 		}
 		}
 		[HttpDelete("{id}")]
+		[Authorize(Roles = "Admin,HR")]
 		public async Task<IActionResult>Delete(int id){
 		try{
 				var deleted = await _reportService.DeleteAsync(id);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client.Extensibility;
 using TalentSphere.DTOs;
 using TalentSphere.Services.Interfaces;
@@ -17,6 +18,7 @@ namespace TalentSphere.Controllers
 		}
 	//created to insert the training data in db
 		[HttpPost]
+		[Authorize(Roles = "Admin,HR,Manager")]
 		public async Task<IActionResult> Create([FromBody] CreateTrainingDTO dto)
 		{
 			if (!ModelState.IsValid)
@@ -33,7 +35,9 @@ namespace TalentSphere.Controllers
 				return StatusCode(500, e.Message);
 			}
 		}
+
 		//to get all the training records from database
+		[Authorize(Roles = "Admin,HR,Manager")]
 		[HttpGet]
 		public async Task<IActionResult> GetAll()
 		{
@@ -49,6 +53,7 @@ namespace TalentSphere.Controllers
 		}
 
 		//to get the training records by id
+		[Authorize(Roles = "Admin,HR,Manager")]
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetById(int id)
 		{
@@ -70,7 +75,8 @@ namespace TalentSphere.Controllers
 
 //to update the training record by id
 [HttpPut("{id}")]
-public async Task<IActionResult> Update(int id, [FromBody] UpdateTrainingDTO dto){
+[Authorize(Roles = "Admin,HR,Manager")]
+		public async Task<IActionResult> Update(int id, [FromBody] UpdateTrainingDTO dto){
 if(!ModelState.IsValid){
 				return BadRequest(ModelState);
 }
@@ -87,7 +93,9 @@ try{
 
 //to delete the training record by id
 [HttpDelete("{id}")]
-public async Task<IActionResult> Delete(int id){
+		[Authorize(Roles = "Admin,HR,Manager")]
+
+		public async Task<IActionResult> Delete(int id){
 try{
 				var deleted = await _trainingService.DeleteAsync(id);
 				if(!deleted){

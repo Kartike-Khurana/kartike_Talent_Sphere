@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Services.Interfaces;
 
@@ -16,6 +17,7 @@ namespace TalentSphere.Controllers
 		}
 
 		[HttpPost]
+		[Authorize(Roles = "Admin,HR,Manager")]
 
 		public async Task<IActionResult> Create([FromBody] CreateEnrollmentDTO dto)
 		{
@@ -39,6 +41,7 @@ namespace TalentSphere.Controllers
 
 		}
 		[HttpGet]
+		[Authorize(Roles = "Admin,HR,Manager")]
 		public async Task<IActionResult> GetAll()
 		{
 			try
@@ -52,6 +55,7 @@ namespace TalentSphere.Controllers
 			}
 		}
 		[HttpGet("{id}")]
+		[Authorize(Roles = "Admin,HR,Manager,Employee")]
 		public async Task<IActionResult> GetEnrollmentById(int id)
 		{
 			var enrollment = await _enrollmentService.GetByIdAsync(id);
@@ -63,6 +67,7 @@ namespace TalentSphere.Controllers
 		}
 
 		[HttpPut("{id}")]
+		[Authorize(Roles = "Admin,HR,Manager")]
 		public async Task<IActionResult> Update(int id, UpdateEnrollmentDTO dto)
 		{
 			if (!ModelState.IsValid)
@@ -84,6 +89,7 @@ namespace TalentSphere.Controllers
 			}
 
 		}
+		[Authorize(Roles = "Admin,HR,Manager")]
 		public async Task<IActionResult> Delete(int id)
 		{
 			try

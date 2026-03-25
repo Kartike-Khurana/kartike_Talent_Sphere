@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Services.Interfaces;
 
@@ -15,6 +16,7 @@ namespace TalentSphere.Controllers
 			_successionPlanService = successionPlanService;
 		}
 		[HttpPost]
+		[Authorize(Roles = "Admin,HR,Manager")]
 		public async Task<IActionResult> Create([FromBody] CreateSuccessionPlanDTO dto)
 		{
 			if (!ModelState.IsValid)
@@ -33,7 +35,8 @@ namespace TalentSphere.Controllers
 	}
 		//to get all the succession plan
 [HttpGet]
-public async Task<IActionResult> GetAll()
+		[Authorize(Roles = "Admin,HR,Manager")]
+		public async Task<IActionResult> GetAll()
 {
 try{
 				var data = await _successionPlanService.GetAllAsync();
@@ -43,8 +46,9 @@ try{
 }
 }
 
-//to update the succession plan
-[HttpPut("{id}")]
+		//to update the succession plan
+		[Authorize(Roles = "Admin,HR,Manager")]
+		[HttpPut("{id}")]
 public async Task<IActionResult> Update(int id, [FromBody] UpdateSuccesionPlanDTO dto)
 {
 try{
@@ -57,8 +61,9 @@ try{
 				return StatusCode(500, e.Message);
 }
 }
-//to delete the succession plan
-public async Task<IActionResult> Delete(int id)
+		//to delete the succession plan
+		[Authorize(Roles = "Admin,HR,Manager")]
+		public async Task<IActionResult> Delete(int id)
 {
 		try{
 				var deleted = await _successionPlanService.DeleteAsync(id);
@@ -75,6 +80,7 @@ public async Task<IActionResult> Delete(int id)
 
 		//to get the succesion plan by id
 		[HttpGet("{id}")]
+		[Authorize(Roles = "Admin,HR,Manager,Employee")]
 		public async Task<IActionResult> GetById(int id)
 		{
 			try

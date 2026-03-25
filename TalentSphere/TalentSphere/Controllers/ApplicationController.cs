@@ -1,8 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Services.Interfaces;
@@ -32,6 +33,7 @@ namespace TalentSphere.Controllers
         /// null and must satisfy all validation requirements.</param>
         /// <returns>A 201 Created response containing the newly created application and its identifier if the operation is
         /// successful; otherwise, a 400 Bad Request response with validation errors.</returns>
+        [Authorize(Roles = "Candidate")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateApplicationDTO dto)
         {
@@ -60,6 +62,7 @@ namespace TalentSphere.Controllers
         /// an error message.</remarks>
         /// <param name="id">The unique identifier of the application to retrieve. Must be a positive integer.</param>
         /// <returns>An IActionResult containing the application data if found; otherwise, returns a NotFound result.</returns>
+        [Authorize(Roles = "HR, Admin, Manager")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -79,6 +82,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Retrieves all applications.
         /// </summary>
+        [Authorize(Roles = "HR, Admin, Manager")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -104,6 +108,7 @@ namespace TalentSphere.Controllers
         /// <param name="dto">The data transfer object containing the updated application information. Cannot be null.</param>
         /// <returns>An IActionResult that indicates the outcome of the update operation. Returns a success message and the
         /// updated application data if successful; otherwise, returns an error response.</returns>
+        [Authorize(Roles = "HR, Admin, Manager")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateApplicationDTO dto)
         {
@@ -134,6 +139,7 @@ namespace TalentSphere.Controllers
         /// application is deleted successfully; returns a 404 Not Found response if the application with the specified
         /// ID does not exist; returns a 500 Internal Server Error response if an error occurs during the deletion
         /// process.</returns>
+        [Authorize(Roles = "Admin, Candidate, Recruiter")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

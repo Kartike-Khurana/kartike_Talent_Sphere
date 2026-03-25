@@ -1,8 +1,9 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Services.Interfaces;
@@ -31,7 +32,7 @@ namespace TalentSphere.Controllers
         /// satisfy all validation requirements.</param>
         /// <returns>A 201 Created response containing the details of the newly created screening and the location of the
         /// resource. Returns a 400 Bad Request response if the input data is invalid.</returns>
-
+        [Authorize(Roles = "HR, Admin, Recruiter")]
         [HttpPost]
         [ProducesResponseType(typeof(ScreeningResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -59,6 +60,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Retrieves all screenings.
         /// </summary>
+        [Authorize(Roles = "HR, Admin, Recruiter")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -73,30 +75,11 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ScreeningResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetById(int id)
-        {
-            try
-            {
-                var screening = await _screeningService.GetByIdAsync(id);
-
-                if (screening == null)
-                    return NotFound(new { message = $"Screening with ID {id} not found." });
-
-                return Ok(new { message = "Screening retrieved successfully.", data = screening });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while retrieving the screening.", error = ex.Message });
-            }
-        }
-
+                                                                                                                                                                                                                                         
         /// <summary>
         /// Update an existing screening
         /// </summary>
+        [Authorize(Roles = "HR, Admin, Recruiter, Candidate")]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ScreeningResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -127,6 +110,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Delete (soft delete) a screening
         /// </summary>
+        [Authorize(Roles = "Admin, Recruiter")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

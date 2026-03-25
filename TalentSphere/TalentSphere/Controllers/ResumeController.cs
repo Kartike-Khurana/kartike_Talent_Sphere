@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TalentSphere.Controllers
 {
     [ApiController]
     [Route("api/resume")]
+  
     public class ResumeController : ControllerBase
     {
         private readonly IResumeService _resumeService;
@@ -21,10 +23,12 @@ namespace TalentSphere.Controllers
             _mapper = mapper;
         }
 
+
         /// <summary>
         /// Retrieves all resumes.
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "HR, Admin, Recruiter, Manager")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -47,6 +51,7 @@ namespace TalentSphere.Controllers
         /// must satisfy all validation requirements.</param>
         /// <returns>A 201 Created response containing the newly created resume and its identifier if the operation succeeds;
         /// otherwise, a 400 Bad Request response with validation errors.</returns>
+        [Authorize(Roles = "Admin, Candidate")]
         [HttpPost]
         [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -70,6 +75,12 @@ namespace TalentSphere.Controllers
             }
         }
 
+        /// <summary>
+        /// Get By Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "HR, Admin, Manager, Candidate")]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -94,6 +105,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Update an existing resume
         /// </summary>
+        [Authorize(Roles = "Candidate, Admin")]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -124,6 +136,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Delete (soft delete) a resume
         /// </summary>
+        [Authorize(Roles = "HR, Admin, Manager, Candidate")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

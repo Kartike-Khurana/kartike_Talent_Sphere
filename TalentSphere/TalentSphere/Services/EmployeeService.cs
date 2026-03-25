@@ -47,12 +47,6 @@ namespace TalentSphere.Services
             return _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
         }
 
-        public async Task<EmployeeResponseDto> GetByIdDtoAsync(int id)
-        {
-            var employee = await _repository.GetByIdAsync(id);
-            if (employee == null) return null;
-            return _mapper.Map<EmployeeResponseDto>(employee);
-        }
 
         public async Task<EmployeeResponseDto> UpdateEmployeeAsync(int id, UpdateEmployeeDTO dto)
         {

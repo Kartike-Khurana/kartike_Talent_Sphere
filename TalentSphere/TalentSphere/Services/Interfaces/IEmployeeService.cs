@@ -10,7 +10,7 @@ namespace TalentSphere.Services.Interfaces
         Task<EmployeeResponseDto> CreateEmployeeAsync(CreateEmployeeDTO dto);
         Task<Employee> GetByIdAsync(int id);
         Task<IEnumerable<EmployeeResponseDto>> GetAllAsync();
-        Task<EmployeeResponseDto> GetByIdDtoAsync(int id);
+        
         Task<EmployeeResponseDto> UpdateEmployeeAsync(int id, UpdateEmployeeDTO dto);
         Task<bool> DeleteEmployeeAsync(int id);
     }

@@ -1,5 +1,6 @@
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Services.Interfaces;
 
@@ -7,6 +8,8 @@ namespace TalentSphere.Controllers
 {
     [ApiController]
     [Route("api/auditlogs")]
+
+    [Authorize(Roles = "Admin")]
     public class AuditLogsController : ControllerBase
     {
         private readonly IAuditLogService _auditLogService;

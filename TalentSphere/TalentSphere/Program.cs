@@ -162,6 +162,27 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Seed default data (roles + admin) if configured
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var services = scope.ServiceProvider;
+        var seederType = typeof(TalentSphere.Utilities.DataSeeder);
+        var seedMethod = seederType.GetMethod("SeedAsync");
+        if (seedMethod != null)
+        {
+            var task = (Task)seedMethod.Invoke(null, new object[] { services });
+            task.GetAwaiter().GetResult();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

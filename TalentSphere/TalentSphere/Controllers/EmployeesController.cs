@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Services.Interfaces;
-using TalentSphere.Repositories.Interfaces; 
+using TalentSphere.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TalentSphere.Controllers
 {
@@ -21,6 +22,7 @@ namespace TalentSphere.Controllers
             _mapper = mapper;
         }
 
+        [Authorize(Roles = "Admin, HR")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -35,6 +37,7 @@ namespace TalentSphere.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin, Employee")]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(EmployeeResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -58,6 +61,7 @@ namespace TalentSphere.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin, Employee")]
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(EmployeeResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -78,25 +82,7 @@ namespace TalentSphere.Controllers
             }
         }
 
-        /// <summary>
-        /// Get employee by id (detailed)
-        /// </summary>
-        [HttpGet("details/{id}")]
-        public async Task<IActionResult> GetDetails(int id)
-        {
-            try
-            {
-                var employee = await _employeeService.GetByIdDtoAsync(id);
-                if (employee == null)
-                    return NotFound(new { message = $"Employee with ID {id} not found." });
-                return Ok(new { message = "Employee retrieved successfully.", data = employee });
-            }
-            catch (System.Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while fetching the employee.", Error = ex.Message });
-            }
-        }
-
+        [Authorize(Roles = "Admin, HR, Employee")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateEmployeeDTO dto)
         {
@@ -115,6 +101,7 @@ namespace TalentSphere.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin, HR, Employee")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

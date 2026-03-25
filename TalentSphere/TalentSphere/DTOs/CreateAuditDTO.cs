@@ -19,7 +19,5 @@ namespace TalentSphere.DTOs
 
         [Required]
         public AuditStatus Status { get; set; }
-
-
     }
 }

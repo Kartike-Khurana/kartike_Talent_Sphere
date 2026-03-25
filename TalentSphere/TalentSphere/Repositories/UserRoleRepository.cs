@@ -26,6 +26,13 @@ namespace TalentSphere.Repositories
             return await _context.Set<UserRole>().FirstOrDefaultAsync(ur => ur.UserRoleId == id && !EF.Property<bool>(ur, "IsDeleted"));
         }
 
+        public async Task<UserRole> GetByUserIdAsync(int userId)
+        {
+            return await _context.Set<UserRole>()
+                .Include(ur => ur.Role)
+                .FirstOrDefaultAsync(ur => ur.UserId == userId && !EF.Property<bool>(ur, "IsDeleted"));
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
@@ -34,6 +41,8 @@ namespace TalentSphere.Repositories
         public async Task<IEnumerable<UserRole>> GetAllAsync()
         {
             return await _context.Set<UserRole>()
+                .Include(ur => ur.User)
+                .Include(ur => ur.Role)
                 .AsNoTracking()
                 .Where(ur => !EF.Property<bool>(ur, "IsDeleted"))
                 .ToListAsync();

@@ -1,10 +1,14 @@
-using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using TalentSphere.DTOs;
+using TalentSphere.Enums;
 using TalentSphere.Models;
-using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services;
+using TalentSphere.Services.Interfaces;
 namespace TalentSphere.Controllers
 {
     [ApiController]
@@ -13,16 +17,25 @@ namespace TalentSphere.Controllers
     {
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
+        private readonly IRoleRepository _roleRepository;
+        private readonly IUserRoleService _userRoleService;
+        private readonly IUserRoleRepository _userRoleRepository;
+        private readonly TokenService _tokenService;
 
-        public UsersController(IUserService userService, IMapper mapper)
+        public UsersController(IUserService userService, IMapper mapper, IRoleRepository roleRepository, IUserRoleService userRoleService, IUserRoleRepository userRoleRepository, TokenService tokenService)
         {
             _userService = userService;
             _mapper = mapper;
+            _roleRepository = roleRepository;
+            _userRoleService = userRoleService;
+            _userRoleRepository = userRoleRepository;
+            _tokenService = tokenService;
         }
 
         /// <summary>
         /// Get all users
         /// </summary>
+        [Authorize(Roles = "Admin, Recruiter, HR")]
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -40,27 +53,6 @@ namespace TalentSphere.Controllers
         }
 
         /// <summary>
-        /// Get user by id (detailed)
-        /// </summary>
-        [HttpGet("details/{id}")]
-        [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetDetails(int id)
-        {
-            try
-            {
-                var user = await _userService.GetByIdDtoAsync(id);
-                if (user == null)
-                    return NotFound(new { message = $"User with ID {id} not found." });
-                return Ok(new { message = "User retrieved successfully.", data = user });
-            }
-            catch (System.Exception ex)
-            {
-                return StatusCode(500, new { Message = "An error occurred while fetching the user.", Error = ex.Message });
-            }
-        }
-        /// <summary>
         /// Creates a new user with the specified user information.
         /// </summary>
         /// <param name="dto">The data transfer object containing the information required to create a new user. Must be valid according
@@ -69,7 +61,7 @@ namespace TalentSphere.Controllers
         /// resource. Returns a 400 Bad Request response if the input is invalid, or a 500 Internal Server Error
         /// response if an unexpected error occurs.</returns>
 
-        [HttpPost]
+        [HttpPost("register")]
         public async Task<IActionResult> Create([FromBody] CreateUserDTO dto)
         {
             try
@@ -77,23 +69,114 @@ namespace TalentSphere.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var user = await _userService.CreateUserAsync(dto);
+                // Default role for all new users is Candidate
+                string roleName = RoleName.Candidate.ToString();
+                var role = await _roleRepository.GetByNameAsync(roleName);
+                if (role == null)
+                    return BadRequest(new { message = $"Role '{roleName}' not found." });
 
-                return Ok(user);
+                var user = new User
+                {
+                    Name = dto.Name,
+                    Email = dto.Email,
+                    PasswordHash = dto.PasswordHash,
+                    Phone = dto.Phone,
+                    Status = UserStatus.Active  // Candidate users are automatically approved
+                };
+
+                // Create user
+                var userCreate = await _userService.CreateUserAsync(user);
+                if (userCreate == null)
+                    return BadRequest(new { message = "User creation failed." });
+
+
+                var userRoleDto = new CreateUserRoleDTO
+                {
+                    UserId = user.UserID,
+                    RoleId = role.RoleID,
+
+                };
+
+                await _userRoleService.CreateUserRoleAsync(userRoleDto);
+
+                return Ok(new { message = "User registered successfully as Candidate.", data = userCreate });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (System.Exception ex)
             {
                 var inner = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, new { Message = "An error occurred while creating the user.", Error = inner });
+                return StatusCode(500, new { message = "An error occurred while creating the user.", error = inner });
             }
         }
-     
-      
-       /// </summary>
-       /// <param name="id"></param>
-       /// <returns></returns>
+
+        /// <summary>
+        /// Login user with email and password, returns JWT token
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDTO dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Email and password are required." });
+
+                // Validate user credentials
+                var user = await _userService.LoginAsync(dto.Email, dto.Password);
+                if (user == null)
+                    return Unauthorized(new { message = "Invalid email or password." });
+
+                // Check if user is deleted
+                if (user.IsDeleted)
+                    return Unauthorized(new { message = "User account has been deleted." });
+
+                //Check user status
+                if (user.Status == UserStatus.Inactive || user.Status == UserStatus.Suspended || user.Status == UserStatus.Suspended || user.Status == UserStatus.Deleted)
+                {
+                    string err = $"Your account is {user.Status} and requires admin approval to activate.";
+                    return Unauthorized(new { message = err });
+                }
+
+                // Get user role
+                var userRole = await _userRoleRepository.GetByUserIdAsync(user.UserID);
+                if (userRole == null)
+                    return BadRequest(new { message = "User role not assigned." });
+
+                // Generate JWT token
+                var token = _tokenService.CreateToken(user, userRole.Role.Name);
+
+                // Create response
+                var loginResponse = new LoginResponseDTO
+                {
+                    UserID = user.UserID,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Token = token,
+                    Role = userRole.Role.Name.ToString(),
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(new { message = "Login successful.", data = loginResponse });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (System.Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { message = "An error occurred during login.", error = inner });
+            }
+        }
 
 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -110,6 +193,7 @@ namespace TalentSphere.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin, Candidate")]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -133,6 +217,7 @@ namespace TalentSphere.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

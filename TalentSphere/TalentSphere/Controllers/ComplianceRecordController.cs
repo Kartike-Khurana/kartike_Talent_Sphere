@@ -34,11 +34,6 @@ namespace TalentSphere.Controllers
         {
             try
             {
-                
-                if (recordDto == null)
-                {
-                    return BadRequest("Record data is required.");
-                }
 
                 if (!ModelState.IsValid)
                 {
@@ -137,6 +132,8 @@ namespace TalentSphere.Controllers
                 var updated = await _complianceRecordService.UpdateComplianceRecordAsync(id, updateDto);
                 if (updated == null)
                     return NotFound($"Compliance record with ID {id} not found.");
+
+
                 return Ok(updated);
             }
             catch (Exception ex)

@@ -1,12 +1,15 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using TalentSphere.Config;
 using TalentSphere.Repositories;
 using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
-using TalentSphere.Mappers;
-using TalentSphere.Repositories;
 using TalentSphere.Services;
+using TalentSphere.Enums;
+using TalentSphere.Models;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,8 +31,10 @@ builder.Services.AddOpenApi();
 // Register Job repository and service
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IJobService, JobService>();
+
 builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
 builder.Services.AddScoped<IInterviewService, InterviewService>();
+
 builder.Services.AddScoped<ISelectionRepository, SelectionRepository>();
 // Register User repository and service
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -50,8 +55,10 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 // Register UserRole repository and service
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+
 builder.Services.AddScoped<IComplianceRecordRepository, ComplianceRecordRepository>();
 builder.Services.AddScoped<IComplianceRecordService, ComplianceRecordService>();
+
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 
@@ -90,6 +97,60 @@ builder.Services.AddScoped<IResumeService, ResumeService>();
 builder.Services.AddScoped<IScreeningRepository, ScreeningRepository>();
 builder.Services.AddScoped<IScreeningService, ScreeningService>();
 
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+
+// Register TokenService for JWT token generation
+builder.Services.AddScoped<TokenService>();
+
+// Configure JWT Authentication
+var key = builder.Configuration["Jwt:Key"];
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+
+    // Handle unauthorized requests with custom JSON response
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            return context.Response.WriteAsJsonAsync(new 
+            { 
+                message = "Unauthorized: Token is missing or invalid.",
+                statusCode = 401
+            });
+        },
+        OnForbidden = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            return context.Response.WriteAsJsonAsync(new 
+            { 
+                message = "Forbidden: You do not have permission to access this resource.",
+                statusCode = 403
+            });
+        }
+    };
+});
+
 // AutoMapper registration - scan assembly for profiles in the Mappers folder
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -103,8 +164,38 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Seed initial roles if they don't exist
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    // Ensure database is created
+    await context.Database.MigrateAsync();
+
+    // Check if roles already exist
+    var existingRoles = await context.Roles.ToListAsync();
+
+    if (!existingRoles.Any())
+    {
+        var roles = new List<Role>
+        {
+            new Role { Name = RoleName.Candidate, CreatedAt = DateTime.UtcNow },
+            new Role { Name = RoleName.Recruiter, CreatedAt = DateTime.UtcNow },
+            new Role { Name = RoleName.HR, CreatedAt = DateTime.UtcNow },
+            new Role { Name = RoleName.Employee, CreatedAt = DateTime.UtcNow },
+            new Role { Name = RoleName.Manager, CreatedAt = DateTime.UtcNow },
+            new Role { Name = RoleName.Admin, CreatedAt = DateTime.UtcNow }
+        };
+
+        await context.Roles.AddRangeAsync(roles);
+        await context.SaveChangesAsync();
+    }
+}
 
 app.Run();

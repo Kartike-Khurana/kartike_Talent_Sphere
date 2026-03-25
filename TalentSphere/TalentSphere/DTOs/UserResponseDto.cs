@@ -10,8 +10,6 @@ namespace TalentSphere.DTOs
 
         public string Email { get; set; }
 
-        public string PasswordHash { get; set; }
-
         public string Phone { get; set; }
 
         public UserStatus Status { get; set; }

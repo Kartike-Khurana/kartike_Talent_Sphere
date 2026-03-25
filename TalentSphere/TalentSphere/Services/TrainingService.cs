@@ -43,7 +43,7 @@ namespace TalentSphere.Services
 			}
 			training.Title = dto.Title;
 			training.Description = dto.Description;
-			training.Duration = dto.Duration;
+			training.Duration = dto.Duration.ToString();
 
 			await _repository.SaveChangesAsync();
 

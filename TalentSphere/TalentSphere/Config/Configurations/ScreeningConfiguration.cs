@@ -13,7 +13,7 @@ namespace TalentSphere.Config.Configurations
             builder.HasKey(s => s.ScreeningID);
             builder.Property(s => s.ScreeningID).ValueGeneratedOnAdd();
 
-            builder.Property(s => s.Result).IsRequired();
+            builder.Property(s => s.Result).HasConversion<string>().IsRequired();
 
             builder.Property(s => s.Date).HasDefaultValueSql("GETUTCDATE()");
 

@@ -6,6 +6,7 @@ using TalentSphere.Models;
 using TalentSphere.Enums;
 using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
+using BC = BCrypt.Net.BCrypt;
 
 namespace TalentSphere.Services
 {
@@ -20,11 +21,19 @@ namespace TalentSphere.Services
             _mapper = mapper;
         }
 
-        public async Task<UserResponseDto> CreateUserAsync(CreateUserDTO dto)
+        public async Task<UserResponseDto> CreateUserAsync(User user)
         {
-            var user = _mapper.Map<User>(dto);
+            // Check if email already exists
+            var existingUser = await _repository.GetByEmailAsync(user.Email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("Email already exists. Please use a different email.");
+            }
+
+            user.PasswordHash = BC.HashPassword(user.PasswordHash);
 
             var added = await _repository.AddAsync(user);
+
             await _repository.SaveChangesAsync();
             var userDetail = _mapper.Map<UserResponseDto>(added);
             return userDetail;
@@ -39,13 +48,6 @@ namespace TalentSphere.Services
         {
             var users = await _repository.GetAllAsync();
             return _mapper.Map<IEnumerable<UserResponseDto>>(users);
-        }
-
-        public async Task<UserResponseDto> GetByIdDtoAsync(int id)
-        {
-            var user = await _repository.GetByIdAsync(id);
-            if (user == null) return null;
-            return _mapper.Map<UserResponseDto>(user);
         }
 
         public async Task<UserResponseDto> UpdateUserAsync(int id, UpdateUserDTO dto)
@@ -74,6 +76,25 @@ namespace TalentSphere.Services
             await _repository.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<User> LoginAsync(string email, string password)
+        {
+            // Find user by email
+            var user = await _repository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                throw new InvalidOperationException("Invalid email");
+            }
+
+            // Verify password
+            bool isPasswordValid = BC.Verify(password, user.PasswordHash);
+            if (!isPasswordValid)
+            {
+                throw new InvalidOperationException("Invalid password");
+            }
+
+            return user;
         }
     }
 }

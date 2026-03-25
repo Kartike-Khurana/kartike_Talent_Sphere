@@ -6,7 +6,6 @@ using TalentSphere.DTOs.CareerPlan;
 using TalentSphere.DTOs.Notification;
 using TalentSphere.Enums;
 using TalentSphere.Models;
-using TalentSphere.Utils;
 
 namespace TalentSphere.Mappers
 {
@@ -90,9 +89,7 @@ namespace TalentSphere.Mappers
             //    .ForMember(dest => dest.User, opt => opt.Ignore())
             //    .ReverseMap();
             // User mappings
-            CreateMap<CreateUserDTO, User>()
-                .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => PasswordHasher.Hash(src.PasswordHash)));
-
+            
             // Update mapping: map only provided (non-null and non-whitespace for strings) fields
             // NOTE: Avoid chaining across calls that may return void; assign to local variable first to prevent CS0023.
             var updateUserMap = CreateMap<UpdateUserDTO, User>();
@@ -100,9 +97,7 @@ namespace TalentSphere.Mappers
             updateUserMap.ForAllMembers(opt => opt.Condition((src, dest, srcMember, context) =>
                 srcMember != null && (!(srcMember is string) || !string.IsNullOrWhiteSpace((string)srcMember))
             ));
-            // Rely on the ForAllMembers condition to skip null/whitespace strings; map/hash password when present
-            updateUserMap.ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => PasswordHasher.Hash(src.PasswordHash)));
-
+            
             // Employee mappings
             CreateMap<CreateEmployeeDTO, Employee>()
                 .ReverseMap();
@@ -120,6 +115,8 @@ namespace TalentSphere.Mappers
             // User mappings
             CreateMap<User, UserResponseDto>()
                 .ReverseMap();
+            CreateMap<CreateUserDTO, User>().ReverseMap();
+            CreateMap<UpdateUserDTO, User>().ReverseMap();
 
             // EmployeeDocument mappings
             CreateMap<CreateEmployeeDocumentDTO, EmployeeDocument>()
@@ -192,6 +189,10 @@ namespace TalentSphere.Mappers
             CreateMap<CreateSuccessionPlanDTO, SuccessionPlan>()
                     .ReverseMap();
 
+            //Role mappings
+            CreateMap<CreateRoleDTO, Role>().ReverseMap();
+            CreateMap<UpdateRoleDTO, Role>().ReverseMap();
+            CreateMap<Role, RoleResponseDTO>().ReverseMap();
         }
     }
 }

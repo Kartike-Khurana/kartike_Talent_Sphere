@@ -37,7 +37,7 @@ namespace TalentSphere.Repositories
         public async Task<User> GetByEmailAsync(string email)
         {
             return await _context.Set<User>()
-                .FirstOrDefaultAsync(u => u.Email == email && !EF.Property<bool>(u, "IsDeleted"));
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower() && !EF.Property<bool>(u, "IsDeleted"));
         }
 
         public async Task<IEnumerable<User>> GetAllAsync()

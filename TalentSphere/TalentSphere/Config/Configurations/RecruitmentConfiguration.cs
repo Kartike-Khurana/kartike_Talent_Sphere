@@ -23,6 +23,7 @@ namespace TalentSphere.Config.Configurations
                    .HasDefaultValueSql("GETUTCDATE()");
 
             builder.Property(j => j.Status)
+                   .HasConversion<string>()
                    .HasDefaultValue(JobStatus.Open)
                    .IsRequired();
 

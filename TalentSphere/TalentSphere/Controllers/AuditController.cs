@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
@@ -5,6 +6,7 @@ using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
+    [Authorize(Roles = "Admin HR ")]
     [ApiController]
     [Route("api/audits")]
     public class AuditController : ControllerBase
@@ -32,10 +34,7 @@ namespace TalentSphere.Controllers
         {
             try
             {
-                if (createAuditDto == null)
-                {
-                    return BadRequest("Audit data is null.");
-                }
+            
 
                 if (!ModelState.IsValid)
                 {
@@ -86,6 +85,7 @@ namespace TalentSphere.Controllers
         /// </summary>
         /// <returns>A list of audit records.</returns>
         /// <response code="200">Returns the list of audit records.</response>
+        /// <response code="204">No records.</response>
         /// <response code="500">If a server error occurs.</response>
         [HttpGet]
         public async Task<IActionResult> GetAllAudits()
@@ -93,7 +93,15 @@ namespace TalentSphere.Controllers
             try
             {
                 var audits = await _auditService.GetAllAuditsAsync();
-                return Ok(audits);
+                if (audits?.Any() == true)
+                {
+                    return Ok(audits);
+                }
+                else
+                {
+                    return NoContent();
+                }
+                
             }
             catch (Exception ex)
             {

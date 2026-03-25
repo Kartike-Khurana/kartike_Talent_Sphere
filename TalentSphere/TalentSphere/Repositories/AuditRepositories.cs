@@ -29,6 +29,7 @@ namespace TalentSphere.Repositories
 
         public async Task<IEnumerable<Audit>> GetAllAuditsAsync()
         {
+
             return await _context.Audits.Where(a => !a.IsDeleted).ToListAsync();
         }
 

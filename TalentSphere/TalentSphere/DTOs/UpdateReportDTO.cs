@@ -1,9 +1,14 @@
-﻿namespace TalentSphere.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TalentSphere.DTOs
 {
-	public class UpdateReportDTO
-	{
-		public string Scope { get; set; }
-		public string Metrics { get; set; }
-		public DateOnly GenerateDate { get; set; }
-	}
+    public class UpdateReportDTO
+    {
+        [Required]
+        public string Scope { get; set; }
+        [Required]
+        public string Metrics { get; set; }
+        [Required]
+        public DateOnly GenerateDate { get; set; }
+    }
 }

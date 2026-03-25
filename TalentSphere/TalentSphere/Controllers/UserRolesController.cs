@@ -1,12 +1,14 @@
-using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
-using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces; 
+using TalentSphere.Services.Interfaces;
 namespace TalentSphere.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/userroles")]
     public class UserRolesController : ControllerBase

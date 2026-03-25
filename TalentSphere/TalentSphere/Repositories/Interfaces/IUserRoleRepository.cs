@@ -8,6 +8,7 @@ namespace TalentSphere.Repositories.Interfaces
     {
         Task<UserRole> AddAsync(UserRole userRole);
         Task<UserRole> GetByIdAsync(int id);
+        Task<UserRole> GetByUserIdAsync(int userId);
         Task<IEnumerable<UserRole>> GetAllAsync();
         Task SaveChangesAsync();
     }

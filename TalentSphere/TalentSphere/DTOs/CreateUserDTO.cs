@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs
 {
@@ -16,7 +15,8 @@ namespace TalentSphere.DTOs
         [Required]
         public string PasswordHash { get; set; }
 
+        [Required]
         public string Phone { get; set; }
-        public UserStatus Status { get; set; }
+
     }
 }

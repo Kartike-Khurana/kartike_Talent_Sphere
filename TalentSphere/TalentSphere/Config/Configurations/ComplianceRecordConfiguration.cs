@@ -12,8 +12,8 @@ namespace TalentSphere.Config.Configurations
             builder.HasKey(c => c.ComplianceID);
             builder.Property(c => c.ComplianceID).ValueGeneratedOnAdd();
 
-            builder.Property(c => c.Type).IsRequired();
-            builder.Property(c => c.Date).IsRequired();
+            builder.Property(c => c.Type).HasConversion<string>().IsRequired();
+            builder.Property(c => c.Date).HasDefaultValueSql("GETUTCDATE()");
 
             builder.Property(c => c.IsDeleted)
                    .HasDefaultValue(false)

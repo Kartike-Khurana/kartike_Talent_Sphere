@@ -86,7 +86,6 @@ namespace TalentSphere.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Findings")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -315,7 +314,12 @@ namespace TalentSphere.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("EmployeeID");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Employees", (string)null);
                 });
@@ -1115,6 +1119,17 @@ namespace TalentSphere.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("TalentSphere.Models.Employee", b =>
+                {
+                    b.HasOne("TalentSphere.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TalentSphere.Models.EmployeeDocument", b =>

@@ -23,7 +23,9 @@ namespace TalentSphere.Repositories
 
         public async Task<Employee> GetByIdAsync(int id)
         {
-            return await _context.Set<Employee>().FirstOrDefaultAsync(e => e.EmployeeID == id && !EF.Property<bool>(e, "IsDeleted"));
+            return await _context.Set<Employee>()
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.EmployeeID == id && !EF.Property<bool>(e, "IsDeleted"));
         }
 
         public async Task SaveChangesAsync()
@@ -34,8 +36,17 @@ namespace TalentSphere.Repositories
         public async Task<IEnumerable<Employee>> GetAllAsync()
         {
             return await _context.Set<Employee>()
+                .Include(e => e.User)
                 .AsNoTracking()
                 .Where(e => !EF.Property<bool>(e, "IsDeleted"))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Employee>> GetByUserIdAsync(int userId)
+        {
+            return await _context.Set<Employee>()
+                .Include(e => e.User)
+                .Where(e => e.UserId == userId && !EF.Property<bool>(e, "IsDeleted"))
                 .ToListAsync();
         }
     }

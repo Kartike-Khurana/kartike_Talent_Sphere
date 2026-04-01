@@ -6,6 +6,7 @@ using TalentSphere.DTOs.CareerPlan;
 using TalentSphere.DTOs.Notification;
 using TalentSphere.Enums;
 using TalentSphere.Models;
+using BC = BCrypt.Net.BCrypt;
 
 namespace TalentSphere.Mappers
 {
@@ -89,7 +90,15 @@ namespace TalentSphere.Mappers
             //    .ForMember(dest => dest.User, opt => opt.Ignore())
             //    .ReverseMap();
             // User mappings
-            
+
+            // RegisterDTO mapping with password hashing
+            CreateMap<RegisterDTO, User>()
+                .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => BC.HashPassword(src.Password)))
+                .ForMember(dest => dest.UserID, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
             // Update mapping: map only provided (non-null and non-whitespace for strings) fields
             // NOTE: Avoid chaining across calls that may return void; assign to local variable first to prevent CS0023.
             var updateUserMap = CreateMap<UpdateUserDTO, User>();

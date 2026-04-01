@@ -19,7 +19,7 @@ namespace TalentSphere.Controllers
             _auditLogService = auditLogService;
         }
 
-        // POST method removed by request. Audit logs should not be created via public API endpoint.
+  
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -44,7 +44,7 @@ namespace TalentSphere.Controllers
             }
         }
 
-        // PUT method removed by request. Audit logs are immutable via API.
+      
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

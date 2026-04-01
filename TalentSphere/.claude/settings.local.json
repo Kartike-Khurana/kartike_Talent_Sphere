@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:/Project/Api/TalentSphere/TalentSphere -type f -name *Token* -o -name *Auth* -o -name *Login*)"
+    ]
+  }
+}

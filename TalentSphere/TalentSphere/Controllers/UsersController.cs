@@ -52,6 +52,8 @@ namespace TalentSphere.Controllers
             }
         }
 
+
+
         /// <summary>
         /// Creates a new user with the specified user information.
         /// </summary>
@@ -62,7 +64,7 @@ namespace TalentSphere.Controllers
         /// response if an unexpected error occurs.</returns>
 
         [HttpPost("register")]
-        public async Task<IActionResult> Create([FromBody] CreateUserDTO dto)
+        public async Task<IActionResult> Create([FromBody] RegisterDTO dto)
         {
             try
             {
@@ -75,26 +77,15 @@ namespace TalentSphere.Controllers
                 if (role == null)
                     return BadRequest(new { message = $"Role '{roleName}' not found." });
 
-                var user = new User
-                {
-                    Name = dto.Name,
-                    Email = dto.Email,
-                    PasswordHash = dto.PasswordHash,
-                    Phone = dto.Phone,
-                    Status = UserStatus.Active  // Candidate users are automatically approved
-                };
-
-                // Create user
-                var userCreate = await _userService.CreateUserAsync(user);
+                // Create user from RegisterDTO
+                var userCreate = await _userService.CreateUserAsync(dto);
                 if (userCreate == null)
                     return BadRequest(new { message = "User creation failed." });
 
-
                 var userRoleDto = new CreateUserRoleDTO
                 {
-                    UserId = user.UserID,
+                    UserId = userCreate.UserID,
                     RoleId = role.RoleID,
-
                 };
 
                 await _userRoleService.CreateUserRoleAsync(userRoleDto);
@@ -126,7 +117,7 @@ namespace TalentSphere.Controllers
                     return BadRequest(new { message = "Email and password are required." });
 
                 // Validate user credentials
-                var user = await _userService.LoginAsync(dto.Email, dto.Password);
+                var user = await _userService.LoginAsync(dto);
                 if (user == null)
                     return Unauthorized(new { message = "Invalid email or password." });
 

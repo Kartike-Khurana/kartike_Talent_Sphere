@@ -13,7 +13,7 @@ namespace TalentSphere.DTOs
         public string Email { get; set; }
 
         // PasswordHash is optional on update; include only when resetting password
-        public string PasswordHash { get; set; }
+        //public string PasswordHash { get; set; }
 
         public string Phone { get; set; }
 

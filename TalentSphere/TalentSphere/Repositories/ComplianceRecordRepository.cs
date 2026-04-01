@@ -33,6 +33,7 @@ namespace TalentSphere.Repositories
 
         public async Task UpdateComplianceRecordAsync(ComplianceRecord complianceRecord)
         {
+            complianceRecord.UpdatedAt = DateTime.UtcNow;
             _context.ComplianceRecords.Update(complianceRecord);
             await _context.SaveChangesAsync();
         }

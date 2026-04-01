@@ -106,10 +106,16 @@ namespace TalentSphere.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (!userId.HasValue)
+                    return Unauthorized(new { message = "User ID not found in token." });
+
+                // Set UserId from the authenticated user's token
+                dto.UserId = userId.Value;
+
                 var employee = await _employeeService.CreateEmployeeAsync(dto);
 
-                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
-                if (userId.HasValue && employee != null)
+                if (employee != null)
                 {
                     await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Employee", $"Employee created with ID {employee.EmployeeID}");
                 }

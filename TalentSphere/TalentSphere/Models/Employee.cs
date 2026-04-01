@@ -11,6 +11,9 @@ namespace TalentSphere.Models
     {
         public int EmployeeID { get; set; }
 
+        [Required]
+        public int UserId { get; set; }
+
         public string Name { get; set; }
 
         public string Department { get; set; }
@@ -18,14 +21,18 @@ namespace TalentSphere.Models
         public string Position { get; set; }
 
         public DateTime? JoinDate { get; set; }
-        
+
         public EmployeeStatus Status { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
-        
-        public bool IsDeleted { get; set;  }
 
+        public bool IsDeleted { get; set; }
+
+        // Navigation property
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; }
     }
 }
+

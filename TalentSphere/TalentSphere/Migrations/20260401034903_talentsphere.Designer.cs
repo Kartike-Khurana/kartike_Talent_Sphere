@@ -12,8 +12,8 @@ using TalentSphere.Config;
 namespace TalentSphere.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260317065533_initM")]
-    partial class initM
+    [Migration("20260401034903_talentsphere")]
+    partial class talentsphere
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -89,7 +89,6 @@ namespace TalentSphere.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Findings")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -235,7 +234,9 @@ namespace TalentSphere.Migrations
                         .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<int>("EmployeeID")
                         .HasColumnType("int");
@@ -253,8 +254,9 @@ namespace TalentSphere.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -315,7 +317,12 @@ namespace TalentSphere.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("EmployeeID");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Employees", (string)null);
                 });
@@ -515,10 +522,11 @@ namespace TalentSphere.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<int>("Status")
+                    b.Property<string>("Status")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("Open");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -744,9 +752,10 @@ namespace TalentSphere.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<int>("Name")
+                    b.Property<string>("Name")
+                        .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -790,8 +799,9 @@ namespace TalentSphere.Migrations
                     b.Property<int>("RecruiterID")
                         .HasColumnType("int");
 
-                    b.Property<int>("Result")
-                        .HasColumnType("int");
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -826,8 +836,9 @@ namespace TalentSphere.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Decision")
-                        .HasColumnType("int");
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -1111,6 +1122,17 @@ namespace TalentSphere.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("TalentSphere.Models.Employee", b =>
+                {
+                    b.HasOne("TalentSphere.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TalentSphere.Models.EmployeeDocument", b =>

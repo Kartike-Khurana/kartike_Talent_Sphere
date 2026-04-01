@@ -7,6 +7,9 @@ namespace TalentSphere.DTOs
     public class CreateEmployeeDTO
     {
         [Required]
+        public int UserId { get; set; }
+
+        [Required]
         public string Name { get; set; }
 
         [Required]

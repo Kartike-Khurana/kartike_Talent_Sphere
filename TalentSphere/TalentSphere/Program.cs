@@ -11,6 +11,7 @@ using TalentSphere.Services;
 using TalentSphere.Enums;
 using TalentSphere.Models;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Cors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,18 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:4200", "http://localhost:3001")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 // Register Job repository and service
 builder.Services.AddScoped<IJobRepository, JobRepository>();
@@ -124,7 +137,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
-
+    
     // Handle unauthorized requests with custom JSON response
     options.Events = new JwtBearerEvents
     {
@@ -188,38 +201,12 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
+
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Seed initial roles if they don't exist
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    // Ensure database is created
-    await context.Database.MigrateAsync();
-
-    // Check if roles already exist
-    var existingRoles = await context.Roles.ToListAsync();
-
-    if (!existingRoles.Any())
-    {
-        var roles = new List<Role>
-        {
-            new Role { Name = RoleName.Candidate, CreatedAt = DateTime.UtcNow },
-            new Role { Name = RoleName.Recruiter, CreatedAt = DateTime.UtcNow },
-            new Role { Name = RoleName.HR, CreatedAt = DateTime.UtcNow },
-            new Role { Name = RoleName.Employee, CreatedAt = DateTime.UtcNow },
-            new Role { Name = RoleName.Manager, CreatedAt = DateTime.UtcNow },
-            new Role { Name = RoleName.Admin, CreatedAt = DateTime.UtcNow }
-        };
-
-        await context.Roles.AddRangeAsync(roles);
-        await context.SaveChangesAsync();
-    }
-}
 
 app.Run();

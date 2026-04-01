@@ -35,6 +35,7 @@ namespace TalentSphere.Repositories
 
         public async Task UpdateAuditAsync(Audit audit)
         {
+            audit.UpdatedAt = DateTime.UtcNow;
             _context.Audits.Update(audit);
             await _context.SaveChangesAsync();
         }

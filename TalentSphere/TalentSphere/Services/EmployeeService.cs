@@ -24,6 +24,7 @@ namespace TalentSphere.Services
         public async Task<EmployeeResponseDto> CreateEmployeeAsync(CreateEmployeeDTO dto)
         {
             var employee = _mapper.Map<Employee>(dto);
+
             employee.CreatedAt = DateTime.UtcNow;
 
             if (employee.Status == 0)
@@ -44,6 +45,12 @@ namespace TalentSphere.Services
         public async Task<IEnumerable<EmployeeResponseDto>> GetAllAsync()
         {
             var employees = await _repository.GetAllAsync();
+            return _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
+        }
+
+        public async Task<IEnumerable<EmployeeResponseDto>> GetByUserIdAsync(int userId)
+        {
+            var employees = await _repository.GetByUserIdAsync(userId);
             return _mapper.Map<IEnumerable<EmployeeResponseDto>>(employees);
         }
 

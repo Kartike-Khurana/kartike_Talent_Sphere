@@ -21,16 +21,20 @@ namespace TalentSphere.Services
             _mapper = mapper;
         }
 
-        public async Task<UserResponseDto> CreateUserAsync(User user)
+        public async Task<UserResponseDto> CreateUserAsync(RegisterDTO registerDto)
         {
             // Check if email already exists
-            var existingUser = await _repository.GetByEmailAsync(user.Email);
+            var existingUser = await _repository.GetByEmailAsync(registerDto.Email);
             if (existingUser != null)
             {
                 throw new InvalidOperationException("Email already exists. Please use a different email.");
             }
 
-            user.PasswordHash = BC.HashPassword(user.PasswordHash);
+            // Map RegisterDTO to User using AutoMapper (password is automatically hashed)
+            var user = _mapper.Map<User>(registerDto);
+
+            // Set status to Active
+            user.Status = UserStatus.Active;
 
             var added = await _repository.AddAsync(user);
 
@@ -78,17 +82,17 @@ namespace TalentSphere.Services
             return true;
         }
 
-        public async Task<User> LoginAsync(string email, string password)
+        public async Task<User> LoginAsync(LoginDTO loginDto)
         {
             // Find user by email
-            var user = await _repository.GetByEmailAsync(email);
+            var user = await _repository.GetByEmailAsync(loginDto.Email);
             if (user == null)
             {
                 throw new InvalidOperationException("Invalid email");
             }
 
             // Verify password
-            bool isPasswordValid = BC.Verify(password, user.PasswordHash);
+            bool isPasswordValid = BC.Verify(loginDto.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
                 throw new InvalidOperationException("Invalid password");

@@ -4,11 +4,12 @@
     {
         public int ReviewID { get; set; }
         public int EmployeeID { get; set; }
-        public int EmployeeName { get; set; }
+        public string? EmployeeName { get; set; }
         public int ManagerID { get; set; }
-        public decimal Score { get; set; }
-        public string Comments { get; set; }
-        public DateTime Date { get; set; }
-        public DateTime? UpdatedAt { get; set; } // This is your "last update"
+        public int Rating { get; set; }
+        public string? Comments { get; set; }
+        public DateTime ReviewDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

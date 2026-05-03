@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TalentSphere.DTOs;
 using TalentSphere.Enums;
 using TalentSphere.Models;
@@ -35,7 +36,7 @@ namespace TalentSphere.Controllers
         /// <summary>
         /// Get all users
         /// </summary>
-        [Authorize(Roles = "Admin, Recruiter, HR")]
+        [Authorize(Roles = "Admin,Recruiter,HR,Manager")]
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -188,7 +189,7 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, Candidate")]
+        [Authorize]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -216,6 +217,51 @@ namespace TalentSphere.Controllers
             catch (System.Exception ex)
             {
                 return StatusCode(500, new { Message = "An error occurred while updating the user.", Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Re-issues a JWT for the calling user using their current role from the database.
+        /// Call this on app load to pick up any role changes made by an admin.
+        /// </summary>
+        [Authorize]
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            try
+            {
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdStr, out int userId))
+                    return Unauthorized(new { message = "Invalid token." });
+
+                var user = await _userService.GetByIdAsync(userId);
+                if (user == null || user.IsDeleted)
+                    return Unauthorized(new { message = "User not found." });
+
+                if (user.Status != UserStatus.Active)
+                    return Unauthorized(new { message = $"Account is {user.Status}." });
+
+                var userRole = await _userRoleRepository.GetByUserIdAsync(user.UserID);
+                if (userRole == null)
+                    return BadRequest(new { message = "User role not assigned." });
+
+                var token = _tokenService.CreateToken(user, userRole.Role.Name);
+
+                var response = new LoginResponseDTO
+                {
+                    UserID = user.UserID,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Token = token,
+                    Role = userRole.Role.Name.ToString(),
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(new { message = "Token refreshed.", data = response });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while refreshing the token.", error = ex.Message });
             }
         }
 

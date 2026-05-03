@@ -6,7 +6,7 @@ using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
-    [Authorize(Roles ="Admin, HR")]
+    [Authorize(Roles = "Admin,HR")]
     [ApiController]
     [Route("api/compliances")]
     public class ComplianceRecordController : ControllerBase

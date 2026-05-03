@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs.CareerPlan
 {
@@ -8,13 +9,13 @@ namespace TalentSphere.DTOs.CareerPlan
         public int EmployeeID { get; set; }
 
         [Required]
+        [MaxLength(500)]
+        public string Title { get; set; }
+
         [MaxLength(2000)]
-        public string Goals { get; set; }
+        public string? Description { get; set; }
 
         [Required]
-        [MaxLength(500)]
-        public string Timeline { get; set; }
-
-
+        public CareerPlanStatus Status { get; set; } = CareerPlanStatus.Planned;
     }
 }

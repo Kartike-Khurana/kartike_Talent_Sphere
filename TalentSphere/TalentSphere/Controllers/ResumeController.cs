@@ -1,162 +1,148 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using TalentSphere.DTOs;
-using TalentSphere.Models;
-using TalentSphere.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TalentSphere.Services;
+using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
     [ApiController]
-    [Route("api/resume")]
-  
+    [Route("api/resumes")]
     public class ResumeController : ControllerBase
     {
         private readonly IResumeService _resumeService;
-        private readonly IMapper _mapper;
-        public ResumeController(IResumeService resumeService, IMapper mapper)
+        private readonly IFileStorageService _fileStorage;
+        private readonly AuditLogHelper _auditLogHelper;
+
+        public ResumeController(IResumeService resumeService, IFileStorageService fileStorage, AuditLogHelper auditLogHelper)
         {
             _resumeService = resumeService;
-            _mapper = mapper;
+            _fileStorage   = fileStorage;
+            _auditLogHelper = auditLogHelper;
         }
 
+        // ── Upload ─────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Retrieves all resumes.
+        /// Upload a resume file (PDF / DOC / DOCX, max 5 MB).
+        /// Send as multipart/form-data with fields: candidateId + file.
         /// </summary>
+        [HttpPost("upload")]
+        [Authorize(Roles = "Admin,Candidate")]
+        [RequestSizeLimit(6 * 1024 * 1024)]
+        public async Task<IActionResult> Upload([FromForm] int candidateId, IFormFile file)
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+
+            var resume = await _resumeService.UploadResumeAsync(candidateId, file);
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Resume", $"Resume uploaded for candidate {candidateId}");
+
+            return CreatedAtAction(nameof(GetById), new { id = resume.ResumeID }, new
+            {
+                message   = "Resume uploaded successfully.",
+                data      = resume,
+                downloadUrl = $"/api/resumes/{resume.ResumeID}/download"
+            });
+        }
+
+        // ── Replace file ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Replace the file for an existing resume record.
+        /// The old file is deleted from disk and replaced with the new one.
+        /// </summary>
+        [HttpPut("{id:int}/upload")]
+        [Authorize(Roles = "Admin,Candidate")]
+        [RequestSizeLimit(6 * 1024 * 1024)]
+        public async Task<IActionResult> ReplaceFile(int id, IFormFile file)
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+
+            var resume = await _resumeService.ReplaceFileAsync(id, file);
+            if (resume is null) return NotFound(new { message = $"Resume {id} not found." });
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Update", "Resume", $"Resume {id} file replaced");
+
+            return Ok(new
+            {
+                message     = "Resume file replaced successfully.",
+                data        = resume,
+                downloadUrl = $"/api/resumes/{id}/download"
+            });
+        }
+
+        // ── Download ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Download the actual resume file. Requires authentication.
+        /// </summary>
+        [HttpGet("{id:int}/download")]
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager,Candidate")]
+        public async Task<IActionResult> Download(int id)
+        {
+            var resume = await _resumeService.GetByIdAsync(id);
+            if (resume is null)
+                return NotFound(new { message = $"Resume {id} not found." });
+
+            var physicalPath = _fileStorage.GetPhysicalPath(resume.FileURI);
+            if (physicalPath is null || !System.IO.File.Exists(physicalPath))
+                return NotFound(new { message = "File not found on disk." });
+
+            var contentType = FileStorageService.GetContentType(resume.FileURI)
+                              ?? "application/octet-stream";
+            var fileName = Path.GetFileName(physicalPath);
+
+            return PhysicalFile(physicalPath, contentType, fileName);
+        }
+
+        // ── Queries ────────────────────────────────────────────────────────────
+
         [HttpGet]
-        [Authorize(Roles = "HR, Admin, Recruiter, Manager")]
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager")]
         public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var resumes = await _resumeService.GetAllAsync();
-                return Ok(new { message = "Resumes retrieved successfully.", data = resumes });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while fetching resumes.", Error = ex.Message });
-            }
-        }
-        /// <summary>
-        /// Creates a new resume using the specified data transfer object.
-        /// </summary>
-        /// <remarks>This method validates the input model before creating the resume. If the model state
-        /// is invalid, the response includes the validation errors. The operation is performed
-        /// asynchronously.</remarks>
-        /// <param name="dto">The data transfer object containing the details of the resume to create. This parameter must not be null and
-        /// must satisfy all validation requirements.</param>
-        /// <returns>A 201 Created response containing the newly created resume and its identifier if the operation succeeds;
-        /// otherwise, a 400 Bad Request response with validation errors.</returns>
-        [Authorize(Roles = "Admin, Candidate")]
-        [HttpPost]
-        [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] CreateResumeDTO dto)
-        {
-            if (dto == null)
-                return BadRequest(new { message = "Request body is required." });
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            try
-            {
-                var resume = await _resumeService.CreateResumeAsync(dto);
-                return Ok(new { message = "Resume created successfully.", data = resume });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while creating the resume.", error = ex.Message });
-            }
+            var resumes = await _resumeService.GetAllAsync();
+            return Ok(new { message = "Resumes retrieved successfully.", data = resumes });
         }
 
-        /// <summary>
-        /// Get By Id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [Authorize(Roles = "HR, Admin, Manager, Candidate")]
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager,Candidate")]
         public async Task<IActionResult> GetById(int id)
         {
-            try
-            {
-                var resume = await _resumeService.GetByIdAsync(id);
-
-                if (resume == null)
-                    return NotFound(new { message = $"Resume with ID {id} not found." });
-
-                return Ok(new { message = "Resume retrieved successfully.", data = resume });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while retrieving the resume.", error = ex.Message });
-            }
+            var resume = await _resumeService.GetByIdAsync(id);
+            if (resume is null)
+                return NotFound(new { message = $"Resume {id} not found." });
+            return Ok(new { message = "Resume retrieved successfully.", data = resume });
         }
 
-        /// <summary>
-        /// Update an existing resume
-        /// </summary>
-        [Authorize(Roles = "Candidate, Admin")]
-        [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ResumeResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateResumeDTO dto)
+        [HttpGet("candidate/{candidateId:int}")]
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager,Candidate")]
+        public async Task<IActionResult> GetByCandidate(int candidateId)
         {
-            try
-            {
-                if (dto == null)
-                    return BadRequest(new { message = "Request body is required." });
-
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var updated = await _resumeService.UpdateResumeAsync(id, dto);
-                if (updated == null)
-                    return NotFound(new { message = $"Resume with ID {id} not found." });
-
-                return Ok(new { message = "Resume updated successfully.", data = updated });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while updating the resume.", Error = ex.Message });
-            }
+            var resumes = await _resumeService.GetByCandidateIdAsync(candidateId);
+            return Ok(new { message = "Resumes retrieved successfully.", data = resumes });
         }
 
-        /// <summary>
-        /// Delete (soft delete) a resume
-        /// </summary>
-        [Authorize(Roles = "HR, Admin, Manager, Candidate")]
-        [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        // ── Soft delete ────────────────────────────────────────────────────────
+
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                var deleted = await _resumeService.DeleteResumeAsync(id);
-                if (!deleted)
-                    return NotFound(new { message = $"Resume with ID {id} not found." });
+            var deleted = await _resumeService.DeleteResumeAsync(id);
+            if (!deleted) return NotFound(new { message = $"Resume {id} not found." });
 
-                return Ok(new { message = "Resume deleted successfully." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = "An error occurred while deleting the resume.", Error = ex.Message });
-            }
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "Resume", $"Resume {id} deleted");
+
+            return Ok(new { message = "Resume deleted." });
         }
     }
 }
-
-

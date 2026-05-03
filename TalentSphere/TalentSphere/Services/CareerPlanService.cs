@@ -31,12 +31,17 @@ namespace TalentSphere.Services
         {
             var plan = _mapper.Map<CareerPlan>(dto);
             plan.CreatedAt = DateTime.UtcNow;
-            plan.Status = CareerPlanStatus.Draft; // Manager creates as Draft initially
 
             await _repository.AddAsync(plan);
             await _repository.SaveChangesAsync();
 
             return _mapper.Map<CareerPlanResponseDTO>(plan);
+        }
+
+        public async Task<IEnumerable<CareerPlanResponseDTO>> GetAllPlansAsync()
+        {
+            var plans = await _repository.GetAllAsync();
+            return _mapper.Map<IEnumerable<CareerPlanResponseDTO>>(plans);
         }
 
         /// <summary>
@@ -82,7 +87,8 @@ namespace TalentSphere.Services
             var plan = await _repository.GetByIdAsync(id);
             if (plan == null) return false;
 
-            _mapper.Map(dto, plan); // Efficiently update fields
+            _mapper.Map(dto, plan);
+            if (dto.Status.HasValue) plan.Status = dto.Status.Value;
             plan.UpdatedAt = DateTime.UtcNow;
 
             _repository.Update(plan);

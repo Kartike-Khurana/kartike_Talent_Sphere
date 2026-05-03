@@ -9,7 +9,11 @@ namespace TalentSphere.DTOs
 
         public int JobID { get; set; }
 
+        public string? JobTitle { get; set; }
+
         public int CandidateID { get; set; }
+
+        public string? CandidateName { get; set; }
 
         public DateTime SubmittedDate { get; set; }
 

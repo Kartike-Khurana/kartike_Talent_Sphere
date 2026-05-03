@@ -18,20 +18,28 @@ namespace TalentSphere.Repositories
 			return entity;
 
 		}
-		public async Task <SuccessionPlan> GetByIdAsync(int id) {
-			return await _context.
-				Set<SuccessionPlan>().FirstOrDefaultAsync(sp => sp.SuccessionID == id && !sp.IsDeleted);
+		public async Task<SuccessionPlan> GetByIdAsync(int id) {
+			return await _context.Set<SuccessionPlan>()
+				.Include(sp => sp.Employee)
+				.Include(sp => sp.Successor)
+				.FirstOrDefaultAsync(sp => sp.SuccessionID == id && !sp.IsDeleted);
 		}
 		public async Task<List<SuccessionPlan>> GetAllAsync()
 		{
-			return await _context.SuccessionPlans.ToListAsync();
+			return await _context.SuccessionPlans
+				.Include(sp => sp.Employee)
+				.Include(sp => sp.Successor)
+				.Where(sp => !sp.IsDeleted)
+				.ToListAsync();
 		}
 		public async Task UpdateAsync(SuccessionPlan plan){
 			_context.SuccessionPlans.Update(plan);
 			await _context.SaveChangesAsync();
 		}
 		public async Task DeleteAsync(SuccessionPlan plan){
-			_context.SuccessionPlans.Remove(plan);
+			plan.IsDeleted = true;
+			plan.UpdatedAt = DateTime.UtcNow;
+			_context.SuccessionPlans.Update(plan);
 			await _context.SaveChangesAsync();
 		}
 		public async Task SaveChangesAsync()

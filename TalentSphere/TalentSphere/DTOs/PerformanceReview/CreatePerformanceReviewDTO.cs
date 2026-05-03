@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace TalentSphere.DTOs.PerformanceReview
 {
@@ -8,16 +8,13 @@ namespace TalentSphere.DTOs.PerformanceReview
         public int EmployeeID { get; set; }
 
         [Required]
-        public int ManagerID { get; set; }
+        [Range(1, 5)]
+        public int Rating { get; set; }
 
-        [Required]
-        public decimal Score { get; set; }
-
-        [Required]
         [MaxLength(1000)]
-        public string Comments { get; set; }
+        public string? Comments { get; set; }
 
         [Required]
-        public DateTime Date { get; set; }
+        public DateTime ReviewDate { get; set; }
     }
 }

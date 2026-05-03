@@ -37,6 +37,7 @@ namespace TalentSphere.Services
                     UserID = userId,
                     Action = action,
                     Resource = resource,
+                    Description = string.IsNullOrWhiteSpace(message) ? null : message,
                     Timestamp = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow
                 };

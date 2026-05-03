@@ -4,8 +4,8 @@ namespace TalentSphere.Services.Interfaces
 {
     public interface IComplianceRecordService
     {
-        Task<CreateComplianceRecordDTO> CreateComplianceRecordAsync(CreateComplianceRecordDTO createComplianceRecordDTO);
-        Task<UpdateComplianceRecordDTO> UpdateComplianceRecordAsync(int id, UpdateComplianceRecordDTO updateComplianceRecordDTO);
+        Task<ComplianceRecordResponseDTO> CreateComplianceRecordAsync(CreateComplianceRecordDTO dto);
+        Task<ComplianceRecordResponseDTO> UpdateComplianceRecordAsync(int id, UpdateComplianceRecordDTO dto);
         Task<ComplianceRecordResponseDTO> GetComplianceRecordByIdAsync(int id);
         Task<IEnumerable<ComplianceRecordResponseDTO>> GetAllComplianceRecordsAsync();
         Task<bool> DeleteComplianceRecordAsync(int id);

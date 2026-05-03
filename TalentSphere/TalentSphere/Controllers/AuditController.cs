@@ -7,7 +7,7 @@ using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
-    [Authorize(Roles = "Admin, HR ")]   
+    [Authorize(Roles = "Admin,HR")]
     [ApiController]
     [Route("api/audits")]
     public class AuditController : ControllerBase
@@ -44,7 +44,8 @@ namespace TalentSphere.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var result = await _auditService.CreateAuditAsync(createAuditDto);
+                var hrUserId = _auditLogHelper.ExtractUserIdFromContext(HttpContext) ?? 0;
+                var result = await _auditService.CreateAuditAsync(createAuditDto, hrUserId);
 
                 if (result == null)
                 {
@@ -103,14 +104,7 @@ namespace TalentSphere.Controllers
             try
             {
                 var audits = await _auditService.GetAllAuditsAsync();
-                if (audits?.Any() == true)
-                {
-                    return Ok(audits);
-                }
-                else
-                {
-                    return NoContent();
-                }
+                return Ok(audits ?? Enumerable.Empty<AuditResponseDTO>());
                 
             }
             catch (Exception ex)

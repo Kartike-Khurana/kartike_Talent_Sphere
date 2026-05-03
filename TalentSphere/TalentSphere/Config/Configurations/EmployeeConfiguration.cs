@@ -29,6 +29,12 @@ namespace TalentSphere.Config.Configurations
                    .WithMany()
                    .HasForeignKey(e => e.UserId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(e => e.Manager)
+                   .WithMany()
+                   .HasForeignKey(e => e.ManagerID)
+                   .OnDelete(DeleteBehavior.NoAction)
+                   .IsRequired(false);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace TalentSphere.Config.Configurations
                    .HasConversion<string>() 
                    .HasMaxLength(50)
                    .IsRequired()
-                   .HasDefaultValue(CareerPlanStatus.Draft);
+                   .HasDefaultValue(CareerPlanStatus.Planned);
 
             
 

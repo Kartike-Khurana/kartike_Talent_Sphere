@@ -4,6 +4,7 @@ namespace TalentSphere.Enums
     {
         Planned,
         Active,
-        Completed
+        Completed,
+        Cancelled
     }
 }

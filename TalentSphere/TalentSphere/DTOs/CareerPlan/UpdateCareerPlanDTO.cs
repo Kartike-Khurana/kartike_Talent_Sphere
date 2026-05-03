@@ -1,15 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-using TalentSphere.Enums;
+﻿using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs.CareerPlan
 {
     public class UpdateCareerPlanDTO
     {
-        [Required]
-        public string Goals { get; set; }
-        [Required]
-        public string Timeline { get; set; }
-        [Required]
-        public CareerPlanStatus Status { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public CareerPlanStatus? Status { get; set; }
     }
 }

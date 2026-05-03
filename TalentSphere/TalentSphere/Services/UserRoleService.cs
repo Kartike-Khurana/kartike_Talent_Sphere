@@ -22,9 +22,23 @@ namespace TalentSphere.Services
 
         public async Task<UserRoleResponseDto> CreateUserRoleAsync(CreateUserRoleDTO dto)
         {
+            // Find any existing role for this user (including previously soft-deleted ones)
+            var existing = await _repository.GetAnyByUserIdAsync(dto.UserId);
+
+            if (existing != null)
+            {
+                // Just update the role on the existing record — no new row created
+                existing.RoleId = dto.RoleId;
+                existing.IsDeleted = false;
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _repository.UpdateAsync(existing);
+                await _repository.SaveChangesAsync();
+                return _mapper.Map<UserRoleResponseDto>(existing);
+            }
+
+            // First-time assignment — create a new record
             var userRole = _mapper.Map<UserRole>(dto);
             userRole.CreatedAt = DateTime.UtcNow;
-
             var added = await _repository.AddAsync(userRole);
             await _repository.SaveChangesAsync();
             return _mapper.Map<UserRoleResponseDto>(added);

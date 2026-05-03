@@ -1,4 +1,3 @@
-﻿using TalentSphere.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace TalentSphere.DTOs
@@ -9,14 +8,8 @@ namespace TalentSphere.DTOs
         public int EmployeeID { get; set; }
 
         [Required]
-        public CompilanceRecordType Type { get; set; }
+        public string RecordType { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string Result { get; set; }
-
-        [StringLength(500)]
-        public string Notes { get; set; }
-
+        public string? Description { get; set; }
     }
 }

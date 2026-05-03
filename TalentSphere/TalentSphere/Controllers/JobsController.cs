@@ -1,176 +1,123 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
+using TalentSphere.DTOs.Common;
+using TalentSphere.DTOs.Job;
+using TalentSphere.Enums;
 using TalentSphere.Models;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
-    [Authorize(Roles = "Admin HR")]
     [ApiController]
     [Route("api/jobs")]
     public class JobsController : ControllerBase
     {
         private readonly IJobService _jobService;
+        private readonly ILogger<JobsController> _logger;
+        private readonly AuditLogHelper _auditLogHelper;
 
-        public JobsController(IJobService jobService)
+        public JobsController(IJobService jobService, ILogger<JobsController> logger, AuditLogHelper auditLogHelper)
         {
             _jobService = jobService;
+            _logger = logger;
+            _auditLogHelper = auditLogHelper;
         }
 
-        /// <summary>
-        /// Creates a new job posting.
-        /// </summary>
-        /// <param name="createJobDto">The job creation data.</param>
-        /// <returns>The created job posting.</returns>
-        /// <response code="201">Returns the newly created job.</response>
-        /// <response code="400">If the data is null or invalid.</response>
-        /// <response code="500">If a server error occurs.</response>
+        /// <summary>Create a new job posting.</summary>
+        [Authorize(Roles = "Admin,HR,Recruiter")]
         [HttpPost]
         [ProducesResponseType(typeof(Job), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateJob([FromBody] CreateJobDTO createJobDto)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var result = await _jobService.CreateJobAsync(createJobDto);
+            var result = await _jobService.CreateJobAsync(createJobDto);
+            if (result == null) return BadRequest("Could not create the job posting.");
 
-                if (result == null)
-                {
-                    return BadRequest("Could not create the job posting.");
-                }
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Job", $"Job posting '{createJobDto.Title}' created");
 
-                return CreatedAtAction(nameof(CreateJob), result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return CreatedAtAction(nameof(GetJobById), new { id = result.JobID }, new { message = "Job created.", data = result });
         }
 
-        /// <summary>
-        /// Gets a job posting by ID.
-        /// </summary>
-        /// <param name="id">The ID of the job.</param>
-        /// <returns>The job posting.</returns>
-        /// <response code="200">Returns the job posting.</response>
-        /// <response code="404">If the job with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        /// <summary>Get a job posting by ID.</summary>
+        [Authorize]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Job), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetJobById(int id)
         {
-            try
-            {
-                var job = await _jobService.GetByIdAsync(id);
-                if (job == null)
-                    return NotFound($"Job with ID {id} not found.");
-                return Ok(job);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var job = await _jobService.GetByIdAsync(id);
+            return job == null ? NotFound($"Job with ID {id} not found.") : Ok(job);
         }
 
         /// <summary>
-        /// Gets all job postings.
+        /// Get all open jobs with optional search, department filter, status filter and pagination.
+        /// Query params: search, department, status (Open|Closed), page, pageSize
         /// </summary>
-        /// <returns>A list of job postings.</returns>
-        /// <response code="200">Returns the list of job postings.</response>
-        /// <response code="204">No records.</response>
-        /// <response code="500">If a server error occurs.</response>
+        [Authorize]
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResult<Job>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetAllJobs()
+        public async Task<IActionResult> GetAllJobs(
+            [FromQuery] string? search = null,
+            [FromQuery] string? department = null,
+            [FromQuery] JobStatus? status = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            try
+            var filters = new JobFilterParams
             {
-                var jobs = await _jobService.GetAllJobsAsync();
-                if (jobs?.Any() == true)
-                {
-                    return Ok(jobs);
-                }
-                else
-                {
-                    return NoContent();
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+                Search = search,
+                Department = department,
+                Status = status,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var result = await _jobService.GetPagedJobsAsync(filters);
+            return Ok(result);
         }
 
-        /// <summary>
-        /// Updates an existing job posting.
-        /// </summary>
-        /// <param name="id">The ID of the job to update.</param>
-        /// <param name="updateJobDto">The new job data.</param>
-        /// <returns>The updated job posting.</returns>
-        /// <response code="200">Returns the updated job posting.</response>
-        /// <response code="400">If the data is null or invalid.</response>
-        /// <response code="404">If the job with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        /// <summary>Update a job posting.</summary>
+        [Authorize(Roles = "Admin,HR,Recruiter")]
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateJob(int id, [FromBody] UpdateJobDTO updateJobDto)
         {
-            try
-            {
-                if (updateJobDto == null)
-                    return BadRequest("Invalid job data.");
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                var updated = await _jobService.UpdateJobAsync(id, updateJobDto);
-                if (updated == null)
-                    return NotFound($"Job with ID {id} not found.");
-                return Ok(updated);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            if (updateJobDto == null) return BadRequest("Invalid job data.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var updated = await _jobService.UpdateJobAsync(id, updateJobDto);
+            if (updated == null) return NotFound($"Job with ID {id} not found.");
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Update", "Job", $"Job {id} updated");
+
+            return Ok(updated);
         }
 
-        /// <summary>
-        /// Deletes a job posting.
-        /// </summary>
-        /// <param name="id">The ID of the job to delete.</param>
-        /// <returns>No content.</returns>
-        /// <response code="204">If the job is successfully deleted.</response>
-        /// <response code="404">If the job with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        /// <summary>Soft-delete a job posting.</summary>
+        [Authorize(Roles = "Admin,HR")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteJob(int id)
         {
-            try
-            {
-                var deleted = await _jobService.DeleteJobAsync(id);
-                if (!deleted)
-                    return NotFound($"Job with ID {id} not found.");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var deleted = await _jobService.DeleteJobAsync(id);
+            if (!deleted) return NotFound($"Job with ID {id} not found.");
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "Job", $"Job {id} deleted");
+
+            return NoContent();
         }
     }
 }

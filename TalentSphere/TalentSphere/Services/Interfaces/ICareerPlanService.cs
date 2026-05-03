@@ -6,6 +6,7 @@ namespace TalentSphere.Services.Interfaces
     public interface ICareerPlanService
     {
         Task<CareerPlanResponseDTO> CreatePlanAsync(CreateCareerPlanDTO dto);
+        Task<IEnumerable<CareerPlanResponseDTO>> GetAllPlansAsync();
         Task<CareerPlanResponseDTO?> GetPlanByIdAsync(int id);
         Task<IEnumerable<CareerPlanResponseDTO>> GetEmployeePlansAsync(int employeeId);
         Task<bool> UpdatePlanAsync(int id, UpdateCareerPlanDTO dto);

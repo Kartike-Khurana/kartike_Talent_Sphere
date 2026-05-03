@@ -1,16 +1,17 @@
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using TalentSphere.Models;
 
 namespace TalentSphere.Repositories.Interfaces
 {
     public interface IInterviewRepository
     {
-        Task<Interview> AddAsync(Interview interview);
-        Task<Interview> GetByIdAsync(int id);
-        Task<List<Interview>> GetAllAsync();
-        Task UpdateAsync(Interview interview);
-        Task DeleteAsync(Interview interview);
+        Task<Models.Interview> AddAsync(Models.Interview interview);
+        Task<Models.Interview?> GetByIdAsync(int id);
+        Task<Models.Interview?> GetByIdWithDetailsAsync(int id);
+        Task<List<Models.Interview>> GetAllAsync();
+        Task<List<Models.Interview>> GetAllWithDetailsAsync();
+        Task<List<Models.Interview>> GetByApplicationIdAsync(int applicationId);
+        Task UpdateAsync(Models.Interview interview);
+        Task DeleteAsync(Models.Interview interview);
         Task SaveChangesAsync();
     }
 }

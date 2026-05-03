@@ -31,7 +31,7 @@ namespace TalentSphere.Repositories
 
 		public async Task<List<Training>> GetAllAsync()
 		{
-			return await _context.Trainings.ToListAsync();
+			return await _context.Trainings.Where(t => !t.IsDeleted).ToListAsync();
 		}
 		public async Task DeleteAsync(Training training)
 		{

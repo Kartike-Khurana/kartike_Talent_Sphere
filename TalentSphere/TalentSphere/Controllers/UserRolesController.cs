@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
-using TalentSphere.Repositories.Interfaces; 
+using TalentSphere.Repositories.Interfaces;
 using TalentSphere.Services.Interfaces;
 namespace TalentSphere.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [ApiController]
     [Route("api/userroles")]
     public class UserRolesController : ControllerBase
@@ -23,6 +23,7 @@ namespace TalentSphere.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateUserRoleDTO dto)
         {
             if (!ModelState.IsValid)
@@ -33,6 +34,7 @@ namespace TalentSphere.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,HR,Manager")]
         public async Task<IActionResult> GetById(int id)
         {
             var userRole = await _service.GetByIdAsync(id);
@@ -40,8 +42,9 @@ namespace TalentSphere.Controllers
                 return NotFound();
             return Ok(userRole);
         }
-        
+
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,Manager")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -56,6 +59,7 @@ namespace TalentSphere.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] CreateUserRoleDTO dto)
         {
             try
@@ -76,6 +80,7 @@ namespace TalentSphere.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

@@ -17,53 +17,84 @@ namespace TalentSphere.Mappers
 
             // ComplianceRecord mappings
             CreateMap<CreateComplianceRecordDTO, ComplianceRecord>()
-                .ReverseMap();
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => ParseComplianceType(src.RecordType)))
+                .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.Result, opt => opt.MapFrom(src => "Pending"))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             CreateMap<UpdateComplianceRecordDTO, ComplianceRecord>()
-                .ReverseMap();
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => ParseComplianceType(src.RecordType)))
+                .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Description))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<ComplianceRecord, ComplianceRecordResponseDTO>()
-                .ReverseMap();
-
+                .ForMember(dest => dest.RecordType, opt => opt.MapFrom(src => src.Type.ToString()))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Notes))
+                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src =>
+                    src.Employee != null ? src.Employee.Name : null));
 
             // Audit mappings
             CreateMap<CreateAuditDTO, Audit>()
-                .ReverseMap();
+                .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.AuditDate))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ParseAuditStatus(src.Status)))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow));
 
             CreateMap<UpdateAuditDTO, Audit>()
-                .ReverseMap();
+                .ForMember(dest => dest.Scope, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.AuditDate ?? DateTime.UtcNow))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => ParseAuditStatus(src.Status)))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<Audit, AuditResponseDTO>()
-
-                .ReverseMap();
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Scope))
+                .ForMember(dest => dest.AuditDate, opt => opt.MapFrom(src => src.Date))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
             // Job mappings
-            CreateMap<CreateJobDTO, Job>()
-                .ReverseMap();
+            CreateMap<CreateJobDTO, Job>().ReverseMap();
+            CreateMap<UpdateJobDTO, Job>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             // Interview mappings
-            CreateMap<CreateInterviewDTO, Interview>()
-                .ReverseMap();
+            CreateMap<CreateInterviewDTO, Interview>().ReverseMap();
+            CreateMap<UpdateInterviewDTO, Interview>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             // Selection mappings
             CreateMap<CreateSelectionDTO, Selection>()
+                .ForMember(dest => dest.Decision, opt => opt.MapFrom(src => ParseSelectionDecision(src.Decision)))
+                .ReverseMap();
+            CreateMap<UpdateSelectionDTO, Selection>()
+                .ForMember(dest => dest.Decision, opt => opt.MapFrom(src => ParseSelectionDecision(src.Decision)))
                 .ReverseMap();
 
 
             //PerformanceReview Mapping
-            // PerformanceReview Mapping Cfor Create
-            CreateMap<CreatePerformanceReviewDTO, PerformanceReview>();
+            CreateMap<CreatePerformanceReviewDTO, PerformanceReview>()
+                .ForMember(dest => dest.Score, opt => opt.MapFrom(src => (decimal)src.Rating))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.ReviewDate))
+                .ForMember(dest => dest.ManagerID, opt => opt.Ignore());
 
-            //Performancereview Mapping for Update 
             CreateMap<UpdatePerformanceReviewDTO, PerformanceReview>()
-             .ForMember(dest => dest.ReviewID, opt => opt.Ignore())
-             .ForMember(dest => dest.EmployeeID, opt => opt.Ignore())
-             .ForMember(dest => dest.ManagerID, opt => opt.Ignore())
-             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+                .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.Rating != null ? (decimal)src.Rating.Value : 0))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.ReviewDate ?? DateTime.UtcNow))
+                .ForMember(dest => dest.ReviewID, opt => opt.Ignore())
+                .ForMember(dest => dest.EmployeeID, opt => opt.Ignore())
+                .ForMember(dest => dest.ManagerID, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-            // PerformanceReview Mapping for Read
-            CreateMap<PerformanceReview, PerformanceReviewDTO>();
-            CreateMap<PerformanceReview, PerformanceReviewListDTO>();
+            CreateMap<PerformanceReview, PerformanceReviewDTO>()
+                .ForMember(dest => dest.Rating, opt => opt.MapFrom(src => (int)src.Score))
+                .ForMember(dest => dest.ReviewDate, opt => opt.MapFrom(src => src.Date))
+                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
+
+            CreateMap<PerformanceReview, PerformanceReviewListDTO>()
+                .ForMember(dest => dest.Rating, opt => opt.MapFrom(src => (int)src.Score))
+                .ForMember(dest => dest.ReviewDate, opt => opt.MapFrom(src => src.Date))
+                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
 
             //Notification Mapping
             CreateMap<CreateNotificationDTO, Notification>()
@@ -73,12 +104,20 @@ namespace TalentSphere.Mappers
                 .ForMember(d => d.Category, opt => opt.MapFrom(s => s.Category.ToString()))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
             // CareerPlan Mapping Configuration
-            CreateMap<CreateCareerPlanDTO, CareerPlan>();
-            CreateMap<UpdateCareerPlanDTO, CareerPlan>();
+            CreateMap<CreateCareerPlanDTO, CareerPlan>()
+                .ForMember(dest => dest.Goals, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Timeline, opt => opt.MapFrom(src => src.Description ?? string.Empty));
+
+            CreateMap<UpdateCareerPlanDTO, CareerPlan>()
+                .ForMember(dest => dest.Goals, opt => opt.MapFrom(src => src.Title))
+                .ForMember(dest => dest.Timeline, opt => opt.MapFrom(src => src.Description))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<CareerPlan, CareerPlanResponseDTO>()
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Goals))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Timeline))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee.Name));
+                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
 
             // Notification Mapping Configuration
             //CreateMap<CreateNotificationDTO, Notification>()
@@ -119,7 +158,9 @@ namespace TalentSphere.Mappers
 
             // Employee response mapping
             CreateMap<Employee, EmployeeResponseDto>()
-                .ReverseMap();
+                .ForMember(dest => dest.Email,       opt => opt.MapFrom((src, _) => src.User    != null ? src.User.Email    : string.Empty))
+                .ForMember(dest => dest.Phone,       opt => opt.MapFrom((src, _) => src.User    != null ? src.User.Phone    : string.Empty))
+                .ForMember(dest => dest.ManagerName, opt => opt.MapFrom((src, _) => src.Manager != null ? src.Manager.Name  : string.Empty));
 
             // User mappings
             CreateMap<User, UserResponseDto>()
@@ -137,7 +178,8 @@ namespace TalentSphere.Mappers
 
             // AuditLog -> Response DTO
             CreateMap<AuditLog, AuditLogResponseDto>()
-                .ReverseMap();
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src =>
+                    src.User != null ? src.User.Name : null));
 
             // UserRole mappings
             CreateMap<CreateUserRoleDTO, UserRole>()
@@ -145,13 +187,16 @@ namespace TalentSphere.Mappers
 
             // UserRole -> Response DTO
             CreateMap<UserRole, UserRoleResponseDto>()
-                .ReverseMap();
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role == null ? string.Empty : src.Role.Name.ToString()))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User == null ? string.Empty : src.User.Name));
             //Application mappings
             CreateMap<CreateApplicationDTO, Application>()
                 .ReverseMap();
 
             // Application -> Response DTO
             CreateMap<Application, ApplicationResponseDTO>()
+                .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src => src.Candidate != null ? src.Candidate.Name : null))
+                .ForMember(dest => dest.JobTitle,      opt => opt.MapFrom(src => src.Job      != null ? src.Job.Title      : null))
                 .ReverseMap();
             // UpdateApplicationDTO -> Application (skip nulls)
             var updateApplicationMap = CreateMap<UpdateApplicationDTO, Application>();
@@ -173,35 +218,59 @@ namespace TalentSphere.Mappers
 
             //Screening mappings
             CreateMap<CreateScreeningDTO, Screening>()
-                .ReverseMap();
+                .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Feedback))
+                .ForMember(dest => dest.Result, opt => opt.MapFrom(src => src.Result))
+                .ForMember(dest => dest.Date, opt => opt.Ignore());
+
             // Screening -> Response DTO
             CreateMap<Screening, ScreeningResponseDTO>()
-                .ReverseMap();
+                .ForMember(dest => dest.Feedback, opt => opt.MapFrom(src => src.Notes))
+                .ForMember(dest => dest.Result, opt => opt.MapFrom(src => src.Result.ToString()))
+                .ForMember(dest => dest.CandidateName, opt => opt.MapFrom(src =>
+                    src.Application != null && src.Application.Candidate != null ? src.Application.Candidate.Name : null))
+                .ForMember(dest => dest.JobTitle, opt => opt.MapFrom(src =>
+                    src.Application != null && src.Application.Job != null ? src.Application.Job.Title : null));
+
             // UpdateScreeningDTO -> Screening (skip nulls)
             var updateScreeningMap = CreateMap<UpdateScreeningDTO, Screening>();
-            updateScreeningMap.ForAllMembers(opt => opt.Condition((src, dest, srcMember, context) =>
-                srcMember != null && (!(srcMember is string) || !string.IsNullOrWhiteSpace((string)srcMember))
-            ));
+            updateScreeningMap
+                .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Feedback))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember, context) =>
+                    srcMember != null && (!(srcMember is string) || !string.IsNullOrWhiteSpace((string)srcMember))
+                ));
             //Report mappings
             CreateMap<CreateReportDTO, Report>()
                 .ReverseMap();
 
-            //Training mappings
-            CreateMap<CreateTrainingDTO, Training>()
-                     .ReverseMap();
+            // Training and Enrollment mappings are handled manually in their services
 
-            //Enrollment mappings
-            CreateMap<CreateEnrollmentDTO, Enrollment>()
-                .ReverseMap();
-
-            //SuccessionPlan mappings
-            CreateMap<CreateSuccessionPlanDTO, SuccessionPlan>()
-                    .ReverseMap();
+            // SuccessionPlan mappings are handled manually in SuccessionPlanService
 
             //Role mappings
             CreateMap<CreateRoleDTO, Role>().ReverseMap();
             CreateMap<UpdateRoleDTO, Role>().ReverseMap();
             CreateMap<Role, RoleResponseDTO>().ReverseMap();
+        }
+
+        private static TalentSphere.Enums.SelectionDecision ParseSelectionDecision(string value)
+        {
+            return Enum.TryParse<TalentSphere.Enums.SelectionDecision>(value, true, out var result)
+                ? result
+                : TalentSphere.Enums.SelectionDecision.Rejected;
+        }
+
+        private static TalentSphere.Enums.CompilanceRecordType ParseComplianceType(string value)
+        {
+            return Enum.TryParse<TalentSphere.Enums.CompilanceRecordType>(value, true, out var result)
+                ? result
+                : TalentSphere.Enums.CompilanceRecordType.Certificate;
+        }
+
+        private static TalentSphere.Enums.AuditStatus ParseAuditStatus(string value)
+        {
+            return Enum.TryParse<TalentSphere.Enums.AuditStatus>(value, true, out var result)
+                ? result
+                : TalentSphere.Enums.AuditStatus.Active;
         }
     }
 }

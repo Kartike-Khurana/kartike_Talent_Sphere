@@ -23,12 +23,18 @@ namespace TalentSphere.Repositories
 
         public async Task<ComplianceRecord> GetComplianceRecordByIdAsync(int id)
         {
-            return await _context.ComplianceRecords.FirstOrDefaultAsync(c => c.ComplianceID == id && !c.IsDeleted);
+            return await _context.ComplianceRecords
+                .Include(c => c.Employee)
+                .FirstOrDefaultAsync(c => c.ComplianceID == id && !c.IsDeleted);
         }
 
         public async Task<IEnumerable<ComplianceRecord>> GetAllComplianceRecordsAsync()
         {
-            return await _context.ComplianceRecords.Where(c => !c.IsDeleted).ToListAsync();
+            return await _context.ComplianceRecords
+                .Include(c => c.Employee)
+                .Where(c => !c.IsDeleted)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task UpdateComplianceRecordAsync(ComplianceRecord complianceRecord)

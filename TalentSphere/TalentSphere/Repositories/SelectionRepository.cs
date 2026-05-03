@@ -1,6 +1,3 @@
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using TalentSphere.Config;
 using TalentSphere.Models;
@@ -19,18 +16,43 @@ namespace TalentSphere.Repositories
 
         public async Task<Selection> AddAsync(Selection selection)
         {
-            var entity = (await _context.Set<Selection>().AddAsync(selection)).Entity;
-            return entity;
+            return (await _context.Set<Selection>().AddAsync(selection)).Entity;
         }
 
-        public async Task<Selection> GetByIdAsync(int id)
+        public async Task<Selection?> GetByIdAsync(int id)
         {
-            return await _context.Set<Selection>().FirstOrDefaultAsync(s => s.SelectionID == id && !EF.Property<bool>(s, "IsDeleted")) ?? null!;
+            return await _context.Set<Selection>()
+                .FirstOrDefaultAsync(s => s.SelectionID == id && !s.IsDeleted);
+        }
+
+        public async Task<Selection?> GetByApplicationIdAsync(int applicationId)
+        {
+            return await _context.Set<Selection>()
+                .Include(s => s.Application)
+                    .ThenInclude(a => a.Job)
+                .Include(s => s.Application)
+                    .ThenInclude(a => a.Candidate)
+                .FirstOrDefaultAsync(s => s.ApplicationID == applicationId && !s.IsDeleted);
         }
 
         public async Task<List<Selection>> GetAllAsync()
         {
-            return await _context.Set<Selection>().Where(s => !EF.Property<bool>(s, "IsDeleted")).ToListAsync();
+            return await _context.Set<Selection>()
+                .Where(s => !s.IsDeleted)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Selection>> GetAllWithDetailsAsync()
+        {
+            return await _context.Set<Selection>()
+                .Include(s => s.Application)
+                    .ThenInclude(a => a.Job)
+                .Include(s => s.Application)
+                    .ThenInclude(a => a.Candidate)
+                .Where(s => !s.IsDeleted)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task UpdateAsync(Selection selection)
@@ -41,7 +63,9 @@ namespace TalentSphere.Repositories
 
         public async Task DeleteAsync(Selection selection)
         {
-            _context.Set<Selection>().Remove(selection);
+            selection.IsDeleted = true;
+            selection.UpdatedAt = DateTime.UtcNow;
+            _context.Set<Selection>().Update(selection);
             await Task.CompletedTask;
         }
 

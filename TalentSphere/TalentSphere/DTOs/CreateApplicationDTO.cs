@@ -1,5 +1,4 @@
 ﻿using System;
-using TalentSphere.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace TalentSphere.DTOs
@@ -14,8 +13,5 @@ namespace TalentSphere.DTOs
 
         [Required]
         public DateTime SubmittedDate { get; set; }
-
-        [Required]
-        public ApplicationStatus Status { get; set; }
     }
 }

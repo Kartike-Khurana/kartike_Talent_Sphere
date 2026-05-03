@@ -1,176 +1,164 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using TalentSphere.DTOs;
-using TalentSphere.Models;
+using TalentSphere.DTOs.Selection;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
-    [Authorize(Roles = "Admin HR")]
     [ApiController]
     [Route("api/selections")]
     public class SelectionsController : ControllerBase
     {
         private readonly ISelectionService _selectionService;
+        private readonly ILogger<SelectionsController> _logger;
+        private readonly AuditLogHelper _auditLogHelper;
 
-        public SelectionsController(ISelectionService selectionService)
+        public SelectionsController(ISelectionService selectionService, ILogger<SelectionsController> logger, AuditLogHelper auditLogHelper)
         {
             _selectionService = selectionService;
+            _logger = logger;
+            _auditLogHelper = auditLogHelper;
         }
 
+        // ── WORKFLOW ENDPOINT ───────────────────────────────────────────────────
+
         /// <summary>
-        /// Creates a new selection.
+        /// Make a final HR selection decision for an application.
+        /// If Selected: auto-creates Employee, promotes role Candidate→Employee, notifies candidate.
+        /// If Rejected: updates application status, notifies candidate.
         /// </summary>
-        /// <param name="createSelectionDto">The selection creation data.</param>
-        /// <returns>The created selection.</returns>
-        /// <response code="201">Returns the newly created selection.</response>
-        /// <response code="400">If the data is null or invalid.</response>
-        /// <response code="500">If a server error occurs.</response>
-        [HttpPost]
-        [ProducesResponseType(typeof(Selection), StatusCodes.Status201Created)]
+        [Authorize(Roles = "Admin,HR")]
+        [HttpPost("decide")]
+        [ProducesResponseType(typeof(SelectionResponseDTO), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> MakeDecision([FromBody] MakeSelectionDecisionDTO dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _selectionService.MakeDecisionAsync(dto);
+
+                var message = result.Decision == "Selected"
+                    ? $"Candidate {result.CandidateName} has been selected. Employee record created (ID: {result.CreatedEmployeeID})."
+                    : $"Application {dto.ApplicationID} has been rejected. Candidate has been notified.";
+
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Selection", $"Selection decision '{result.Decision}' made for application {dto.ApplicationID}");
+
+                return CreatedAtAction(nameof(GetSelectionById), new { id = result.SelectionID }, new { message, data = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error making selection decision for application {ApplicationID}", dto.ApplicationID);
+                return StatusCode(500, new { message = "An error occurred while processing the decision." });
+            }
+        }
+
+        /// <summary>Get selection by application ID.</summary>
+        [Authorize(Roles = "Admin,HR,Candidate")]
+        [HttpGet("application/{applicationId}")]
+        [ProducesResponseType(typeof(SelectionResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetByApplicationId(int applicationId)
+        {
+            var result = await _selectionService.GetByApplicationIdAsync(applicationId);
+            return result == null
+                ? NotFound(new { message = $"No selection decision found for application {applicationId}." })
+                : Ok(new { message = "Selection retrieved successfully.", data = result });
+        }
+
+        /// <summary>Get all selections with candidate and job details.</summary>
+        [Authorize(Roles = "Admin,HR")]
+        [HttpGet("detailed")]
+        [ProducesResponseType(typeof(IEnumerable<SelectionResponseDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllDetailed()
+        {
+            var selections = await _selectionService.GetAllWithDetailsAsync();
+            return Ok(new { message = "Selections retrieved successfully.", data = selections });
+        }
+
+        // ── BASIC CRUD ENDPOINTS ────────────────────────────────────────────────
+
+        [Authorize(Roles = "Admin,HR")]
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateSelection([FromBody] CreateSelectionDTO createSelectionDto)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var result = await _selectionService.CreateSelectionAsync(createSelectionDto);
+            var result = await _selectionService.CreateSelectionAsync(createSelectionDto);
+            if (result == null) return BadRequest("Could not create the selection.");
 
-                if (result == null)
-                {
-                    return BadRequest("Could not create the selection.");
-                }
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Selection", $"Selection created for application {createSelectionDto.ApplicationID}");
 
-                return CreatedAtAction(nameof(CreateSelection), result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return CreatedAtAction(nameof(GetSelectionById), new { id = result.SelectionID }, result);
         }
 
-        /// <summary>
-        /// Gets a selection by ID.
-        /// </summary>
-        /// <param name="id">The ID of the selection.</param>
-        /// <returns>The selection.</returns>
-        /// <response code="200">Returns the selection.</response>
-        /// <response code="404">If the selection with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(Selection), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetSelectionById(int id)
         {
-            try
-            {
-                var selection = await _selectionService.GetByIdAsync(id);
-                if (selection == null)
-                    return NotFound($"Selection with ID {id} not found.");
-                return Ok(selection);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var selection = await _selectionService.GetByIdAsync(id);
+            return selection == null ? NotFound($"Selection with ID {id} not found.") : Ok(selection);
         }
 
-        /// <summary>
-        /// Gets all selections.
-        /// </summary>
-        /// <returns>A list of selections.</returns>
-        /// <response code="200">Returns the list of selections.</response>
-        /// <response code="204">No records.</response>
-        /// <response code="500">If a server error occurs.</response>
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllSelections()
         {
-            try
-            {
-                var selections = await _selectionService.GetAllSelectionsAsync();
-                if (selections?.Any() == true)
-                {
-                    return Ok(selections);
-                }
-                else
-                {
-                    return NoContent();
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var selections = await _selectionService.GetAllSelectionsAsync();
+            return !selections.Any() ? NoContent() : Ok(selections);
         }
 
-        /// <summary>
-        /// Updates an existing selection.
-        /// </summary>
-        /// <param name="id">The ID of the selection to update.</param>
-        /// <param name="updateSelectionDto">The new selection data.</param>
-        /// <returns>The updated selection.</returns>
-        /// <response code="200">Returns the updated selection.</response>
-        /// <response code="400">If the data is null or invalid.</response>
-        /// <response code="404">If the selection with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        [Authorize(Roles = "Admin,HR")]
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateSelection(int id, [FromBody] UpdateSelectionDTO updateSelectionDto)
         {
-            try
-            {
-                if (updateSelectionDto == null)
-                    return BadRequest("Invalid selection data.");
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                var updated = await _selectionService.UpdateSelectionAsync(id, updateSelectionDto);
-                if (updated == null)
-                    return NotFound($"Selection with ID {id} not found.");
-                return Ok(updated);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var updated = await _selectionService.UpdateSelectionAsync(id, updateSelectionDto);
+            if (updated == null) return NotFound($"Selection with ID {id} not found.");
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Update", "Selection", $"Selection {id} updated");
+
+            return Ok(updated);
         }
 
-        /// <summary>
-        /// Deletes a selection.
-        /// </summary>
-        /// <param name="id">The ID of the selection to delete.</param>
-        /// <returns>No content.</returns>
-        /// <response code="204">If the selection is successfully deleted.</response>
-        /// <response code="404">If the selection with the specified ID is not found.</response>
-        /// <response code="500">If a server error occurs.</response>
+        [Authorize(Roles = "Admin,HR")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteSelection(int id)
         {
-            try
-            {
-                var deleted = await _selectionService.DeleteSelectionAsync(id);
-                if (!deleted)
-                    return NotFound($"Selection with ID {id} not found.");
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var deleted = await _selectionService.DeleteSelectionAsync(id);
+            if (!deleted) return NotFound($"Selection with ID {id} not found.");
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "Selection", $"Selection {id} deleted");
+
+            return NoContent();
         }
     }
 }

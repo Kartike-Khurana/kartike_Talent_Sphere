@@ -35,7 +35,9 @@ namespace TalentSphere.Repositories
         {
             return await _context.Set<AuditLog>()
                 .AsNoTracking()
+                .Include(a => a.User)
                 .Where(a => !EF.Property<bool>(a, "IsDeleted"))
+                .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
         }
     }

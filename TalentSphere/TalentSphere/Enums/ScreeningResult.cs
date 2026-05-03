@@ -2,8 +2,8 @@ namespace TalentSphere.Enums
 {
     public enum ScreeningResult
     {
-        Fail,
+        Pending,
         Pass,
-        PlusOne
+        Fail,
     }
 }

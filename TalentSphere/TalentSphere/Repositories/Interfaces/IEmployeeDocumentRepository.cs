@@ -11,5 +11,6 @@ namespace TalentSphere.Repositories.Interfaces
         Task<IEnumerable<EmployeeDocument>> GetAllAsync();
         Task SaveChangesAsync();
         Task<bool> EmployeeExistsAsync(int employeeId);
+        Task<IEnumerable<EmployeeDocument>> GetByEmployeeIdAsync(int employeeId);
     }
 }

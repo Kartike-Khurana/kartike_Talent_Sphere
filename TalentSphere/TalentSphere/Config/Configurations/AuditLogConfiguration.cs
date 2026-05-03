@@ -14,6 +14,7 @@ namespace TalentSphere.Config.Configurations
 
             builder.Property(a => a.Action).HasConversion<string>().IsRequired().HasMaxLength(255);
             builder.Property(a => a.Resource).IsRequired().HasMaxLength(255);
+            builder.Property(a => a.Description).HasMaxLength(1000);
 
             builder.Property(a => a.Timestamp).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()");

@@ -2,9 +2,11 @@ namespace TalentSphere.Enums
 {
     public enum AuditStatus
     {
+        Active,
+        Completed,
+        Archived,
         Pending,
         InProgress,
-        Completed,
         Approved,
         Rejected
     }

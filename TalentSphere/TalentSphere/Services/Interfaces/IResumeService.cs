@@ -1,15 +1,14 @@
-﻿using System.Threading.Tasks;
-using TalentSphere.Models;
 using TalentSphere.DTOs;
 
 namespace TalentSphere.Services.Interfaces
 {
     public interface IResumeService
     {
-        Task<ResumeResponseDTO> CreateResumeAsync(CreateResumeDTO dto);
-        Task<ResumeResponseDTO> GetByIdAsync(int id);
-        Task<ResumeResponseDTO> UpdateResumeAsync(int id, UpdateResumeDTO dto);
+        Task<ResumeResponseDTO> UploadResumeAsync(int candidateId, IFormFile file);
+        Task<ResumeResponseDTO?> GetByIdAsync(int id);
         Task<IEnumerable<ResumeResponseDTO>> GetAllAsync();
+        Task<IEnumerable<ResumeResponseDTO>> GetByCandidateIdAsync(int candidateId);
+        Task<ResumeResponseDTO?> ReplaceFileAsync(int id, IFormFile file);
         Task<bool> DeleteResumeAsync(int id);
     }
 }

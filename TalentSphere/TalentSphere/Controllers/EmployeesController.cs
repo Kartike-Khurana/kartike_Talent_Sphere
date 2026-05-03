@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Security.Claims;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
@@ -25,7 +26,7 @@ namespace TalentSphere.Controllers
             _auditLogHelper = auditLogHelper;
         }
 
-        [Authorize(Roles = "Admin, HR")]
+        [Authorize(Roles = "Admin,HR,Manager")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -40,8 +41,8 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, Employee")]
-        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,HR,Manager")]
+        [HttpPut("{id:int}")]
         [ProducesResponseType(typeof(EmployeeResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -70,8 +71,8 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, Employee")]
-        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,HR")]
+        [HttpDelete("{id:int}")]
         [ProducesResponseType(typeof(EmployeeResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -97,7 +98,7 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, HR, Employee")]
+        [Authorize(Roles = "Admin,HR")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateEmployeeDTO dto)
         {
@@ -106,19 +107,11 @@ namespace TalentSphere.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
-                if (!userId.HasValue)
-                    return Unauthorized(new { message = "User ID not found in token." });
-
-                // Set UserId from the authenticated user's token
-                dto.UserId = userId.Value;
-
                 var employee = await _employeeService.CreateEmployeeAsync(dto);
 
-                if (employee != null)
-                {
-                    await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Employee", $"Employee created with ID {employee.EmployeeID}");
-                }
+                var actorId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (actorId.HasValue)
+                    await _auditLogHelper.LogActionAsync(actorId.Value, "Create", "Employee", $"Employee created with ID {employee.EmployeeID} for user {dto.UserId}");
 
                 return CreatedAtAction(nameof(GetById), new { id = employee.EmployeeID }, employee);
             }
@@ -128,8 +121,31 @@ namespace TalentSphere.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin, HR, Employee")]
-        [HttpGet("{id}")]
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            try
+            {
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdStr, out int userId))
+                    return Unauthorized(new { message = "Invalid token." });
+
+                var employees = await _employeeService.GetByUserIdAsync(userId);
+                var employee = employees.FirstOrDefault();
+                if (employee == null)
+                    return NotFound(new { message = "No employee record found for your account." });
+
+                return Ok(employee);
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching your profile.", error = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             try

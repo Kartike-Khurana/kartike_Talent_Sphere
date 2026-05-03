@@ -31,9 +31,13 @@ namespace TalentSphere.Config.Configurations
             builder.HasIndex(u => u.Email).IsUnique();
 
             builder.Property(u => u.Phone)
-                   .HasMaxLength(50);
+                   .HasMaxLength(50)
+                   .IsRequired(false);
 
-            builder.HasIndex(u => u.Phone).IsUnique();
+            // Filtered: only enforce uniqueness for non-null phone numbers
+            builder.HasIndex(u => u.Phone)
+                   .IsUnique()
+                   .HasFilter("[Phone] IS NOT NULL");
 
             builder.Property(u => u.Status).
                     HasConversion<string>()

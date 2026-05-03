@@ -13,13 +13,10 @@ namespace TalentSphere.Utilities
     {
         public static async Task SeedAsync(IServiceProvider services)
         {
-            using var scope = services.CreateScope();
-            var provider = scope.ServiceProvider;
-
-            var config = provider.GetRequiredService<IConfiguration>();
-            var roleRepo = provider.GetRequiredService<IRoleRepository>();
-            var userRepo = provider.GetRequiredService<IUserRepository>();
-            var userRoleRepo = provider.GetRequiredService<IUserRoleRepository>();
+            var config = services.GetRequiredService<IConfiguration>();
+            var roleRepo = services.GetRequiredService<IRoleRepository>();
+            var userRepo = services.GetRequiredService<IUserRepository>();
+            var userRoleRepo = services.GetRequiredService<IUserRoleRepository>();
 
             // 1. Ensure roles exist
             var existingRoles = (await roleRepo.GetAllAsync()).ToList();
@@ -56,7 +53,7 @@ namespace TalentSphere.Utilities
                     Name = "Master Admin",
                     Email = seedEmail,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(seedPassword),
-                    Phone = string.Empty,
+                    Phone = null,
                     Status = UserStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,

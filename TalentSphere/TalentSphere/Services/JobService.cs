@@ -1,12 +1,11 @@
-using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using AutoMapper;
 using TalentSphere.DTOs;
+using TalentSphere.DTOs.Common;
+using TalentSphere.DTOs.Job;
 using TalentSphere.Enums;
 using TalentSphere.Models;
-using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Services
 {
@@ -14,11 +13,13 @@ namespace TalentSphere.Services
     {
         private readonly IJobRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ILogger<JobService> _logger;
 
-        public JobService(IJobRepository repository, IMapper mapper)
+        public JobService(IJobRepository repository, IMapper mapper, ILogger<JobService> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<Job> CreateJobAsync(CreateJobDTO dto)
@@ -26,19 +27,14 @@ namespace TalentSphere.Services
             var job = _mapper.Map<Job>(dto);
             job.PostedDate = DateTime.UtcNow;
             job.CreatedAt = DateTime.UtcNow;
-
-            // Ensure default status if not provided
-            if (job.Status == 0)
-            {
-                job.Status = JobStatus.Open;
-            }
-
+            job.Status = JobStatus.Open;
             var added = await _repository.AddAsync(job);
             await _repository.SaveChangesAsync();
+            _logger.LogInformation("Job '{Title}' created with ID {JobID}", job.Title, job.JobID);
             return added;
         }
 
-        public async Task<Job> GetByIdAsync(int id)
+        public async Task<Job?> GetByIdAsync(int id)
         {
             return await _repository.GetByIdAsync(id);
         }
@@ -48,15 +44,19 @@ namespace TalentSphere.Services
             return await _repository.GetAllAsync();
         }
 
-        public async Task<Job> UpdateJobAsync(int id, UpdateJobDTO dto)
+        public async Task<PagedResult<Job>> GetPagedJobsAsync(JobFilterParams filters)
+        {
+            if (filters.PageSize > 100) filters.PageSize = 100;
+            if (filters.Page < 1) filters.Page = 1;
+            return await _repository.GetPagedAsync(filters);
+        }
+
+        public async Task<Job?> UpdateJobAsync(int id, UpdateJobDTO dto)
         {
             var job = await _repository.GetByIdAsync(id);
-            if (job == null)
-                return null;
-
+            if (job == null) return null;
             _mapper.Map(dto, job);
             job.UpdatedAt = DateTime.UtcNow;
-
             await _repository.UpdateAsync(job);
             await _repository.SaveChangesAsync();
             return job;
@@ -65,9 +65,7 @@ namespace TalentSphere.Services
         public async Task<bool> DeleteJobAsync(int id)
         {
             var job = await _repository.GetByIdAsync(id);
-            if (job == null)
-                return false;
-
+            if (job == null) return false;
             await _repository.DeleteAsync(job);
             await _repository.SaveChangesAsync();
             return true;

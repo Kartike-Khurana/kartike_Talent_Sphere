@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TalentSphere.Migrations
 {
     /// <inheritdoc />
-    public partial class talentsphere : Migration
+    public partial class Talentsphere : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -201,11 +201,17 @@ namespace TalentSphere.Migrations
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Active"),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "GETUTCDATE()"),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    ManagerID = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Employees", x => x.EmployeeID);
+                    table.ForeignKey(
+                        name: "FK_Employees_Users_ManagerID",
+                        column: x => x.ManagerID,
+                        principalTable: "Users",
+                        principalColumn: "UserID");
                     table.ForeignKey(
                         name: "FK_Employees_Users_UserId",
                         column: x => x.UserId,
@@ -303,8 +309,10 @@ namespace TalentSphere.Migrations
                     ApplicationID = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     Time = table.Column<TimeOnly>(type: "time", nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     InterviewerID = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Scheduled"),
+                    Feedback = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "GETUTCDATE()"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
@@ -467,9 +475,7 @@ namespace TalentSphere.Migrations
                     EnrollmentID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     TrainingID = table.Column<int>(type: "int", nullable: false),
-                    TrainingID1 = table.Column<int>(type: "int", nullable: false),
                     EmployeeID = table.Column<int>(type: "int", nullable: false),
-                    EmployeeID1 = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateOnly>(type: "date", nullable: false),
                     status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Enrolled"),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
@@ -486,23 +492,11 @@ namespace TalentSphere.Migrations
                         principalColumn: "EmployeeID",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Enrollments_Employees_EmployeeID1",
-                        column: x => x.EmployeeID1,
-                        principalTable: "Employees",
-                        principalColumn: "EmployeeID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "FK_Enrollments_Trainings_TrainingID",
                         column: x => x.TrainingID,
                         principalTable: "Trainings",
                         principalColumn: "TrainingID",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Enrollments_Trainings_TrainingID1",
-                        column: x => x.TrainingID1,
-                        principalTable: "Trainings",
-                        principalColumn: "TrainingID",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -544,7 +538,6 @@ namespace TalentSphere.Migrations
                     SuccessionID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EmployeeID = table.Column<int>(type: "int", nullable: false),
-                    EmployeeID1 = table.Column<int>(type: "int", nullable: false),
                     Position = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Timeline = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     status = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Planned"),
@@ -561,12 +554,6 @@ namespace TalentSphere.Migrations
                         principalTable: "Employees",
                         principalColumn: "EmployeeID",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_SuccessionPlans_Employees_EmployeeID1",
-                        column: x => x.EmployeeID1,
-                        principalTable: "Employees",
-                        principalColumn: "EmployeeID",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -605,6 +592,11 @@ namespace TalentSphere.Migrations
                 column: "EmployeeID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Employees_ManagerID",
+                table: "Employees",
+                column: "ManagerID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Employees_UserId",
                 table: "Employees",
                 column: "UserId");
@@ -615,19 +607,9 @@ namespace TalentSphere.Migrations
                 column: "EmployeeID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_EmployeeID1",
-                table: "Enrollments",
-                column: "EmployeeID1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_TrainingID",
                 table: "Enrollments",
                 column: "TrainingID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_TrainingID1",
-                table: "Enrollments",
-                column: "TrainingID1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Interviews_ApplicationID",
@@ -678,11 +660,6 @@ namespace TalentSphere.Migrations
                 name: "IX_SuccessionPlans_EmployeeID",
                 table: "SuccessionPlans",
                 column: "EmployeeID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SuccessionPlans_EmployeeID1",
-                table: "SuccessionPlans",
-                column: "EmployeeID1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",

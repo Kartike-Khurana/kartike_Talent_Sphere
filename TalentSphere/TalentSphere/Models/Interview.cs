@@ -15,18 +15,22 @@ namespace TalentSphere.Models
 
         public TimeOnly Time { get; set; }
 
+        public string? Location { get; set; }
+
         public int InterviewerID { get; set; }
 
         public InterviewStatus Status { get; set; }
+
+        public string? Feedback { get; set; }
 
         public Application Application { get; set; }
 
         public User Interviewer { get; set; }
 
-        public DateTime CreatedAt { get; set; } 
+        public DateTime CreatedAt { get; set; }
 
-        public DateTime? UpdatedAt { get; set; } 
-        
+        public DateTime? UpdatedAt { get; set; }
+
         public bool IsDeleted { get; set; }
     }
 }

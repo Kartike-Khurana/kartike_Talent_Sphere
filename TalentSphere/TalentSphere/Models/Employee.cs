@@ -30,9 +30,14 @@ namespace TalentSphere.Models
 
         public bool IsDeleted { get; set; }
 
-        // Navigation property
+        public int? ManagerID { get; set; }
+
+        // Navigation properties
         [ForeignKey("UserId")]
         public virtual User User { get; set; }
+
+        [ForeignKey("ManagerID")]
+        public virtual User? Manager { get; set; }
     }
 }
 

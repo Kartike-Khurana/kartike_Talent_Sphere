@@ -26,12 +26,21 @@ namespace TalentSphere.Services
             // Check if email already exists
             var existingUser = await _repository.GetByEmailAsync(registerDto.Email);
             if (existingUser != null)
-            {
                 throw new InvalidOperationException("Email already exists. Please use a different email.");
+
+            // Check phone uniqueness only when a phone number is provided
+            if (!string.IsNullOrWhiteSpace(registerDto.Phone))
+            {
+                var phoneUser = await _repository.GetByPhoneAsync(registerDto.Phone);
+                if (phoneUser != null)
+                    throw new InvalidOperationException("Phone number already in use. Please use a different number.");
             }
 
             // Map RegisterDTO to User using AutoMapper (password is automatically hashed)
             var user = _mapper.Map<User>(registerDto);
+            // Store null when no phone is provided — avoids empty-string unique index conflict
+            if (string.IsNullOrWhiteSpace(user.Phone))
+                user.Phone = null;
 
             // Set status to Active
             user.Status = UserStatus.Active;

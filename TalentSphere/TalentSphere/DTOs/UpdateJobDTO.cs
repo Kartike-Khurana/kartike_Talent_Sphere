@@ -1,31 +1,17 @@
-using System.ComponentModel.DataAnnotations;
 using TalentSphere.Enums;
 
 namespace TalentSphere.DTOs
 {
     public class UpdateJobDTO
     {
-        [Required]
-        public string JobTitle { get; set; }
+        public string? Title { get; set; }
 
-        [Required]
-        public string Description { get; set; }
+        public string? Department { get; set; }
 
-        [Required]
-        public string Requirements { get; set; }
+        public string? Description { get; set; }
 
-        public string Responsibilities { get; set; }
+        public string? Requirements { get; set; }
 
-        public decimal? SalaryMin { get; set; }
-
-        public decimal? SalaryMax { get; set; }
-
-        public string Location { get; set; }
-
-        [Required]
-        public JobStatus Status { get; set; }
-
-        [Required]
-        public int DepartmentID { get; set; }
+        public JobStatus? Status { get; set; }
     }
 }

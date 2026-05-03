@@ -1,64 +1,85 @@
-﻿using AutoMapper;
 using TalentSphere.DTOs;
+using TalentSphere.Enums;
 using TalentSphere.Models;
 using TalentSphere.Repositories.Interfaces;
 using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Services
 {
-	public class SuccessionPlanService : ISuccessionPlanService
-	{
-		private readonly ISuccessionPlanRepository _repository;
-		private readonly IMapper _mapper;
+    public class SuccessionPlanService : ISuccessionPlanService
+    {
+        private readonly ISuccessionPlanRepository _repository;
 
-		public SuccessionPlanService(ISuccessionPlanRepository repository
-			, IMapper mapper)
-		{
-			_repository = repository;
-			_mapper = mapper;
-		}
-		public async Task<SuccessionPlan> CreateSuccessionPlanAsync(CreateSuccessionPlanDTO dto)
-		{
-			var succession = _mapper.Map<SuccessionPlan>(dto);
-			succession.CreatedAt = DateTime.UtcNow;
+        public SuccessionPlanService(ISuccessionPlanRepository repository)
+        {
+            _repository = repository;
+        }
 
-			var added = await _repository.AddAsync(succession);
-			await _repository.SaveChangesAsync();
+        public async Task<SuccessionPlanResponseDTO> CreateSuccessionPlanAsync(CreateSuccessionPlanDTO dto)
+        {
+            var plan = new SuccessionPlan
+            {
+                EmployeeID = dto.EmployeeID,
+                SuccessorID = dto.SuccessorID,
+                Status = ParseStatus(dto.Status),
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
 
-			return added;
-		}
+            var added = await _repository.AddAsync(plan);
+            await _repository.SaveChangesAsync();
 
-		public async Task<SuccessionPlan> GetByIdAsync(int id)
-		{
-			return await _repository.GetByIdAsync(id);
+            var withDetails = await _repository.GetByIdAsync(added.SuccessionID);
+            return MapToResponse(withDetails ?? added);
+        }
 
-		}
-		public async Task<List<SuccessionPlan>> GetAllAsync()
-		{
-			return await _repository.GetAllAsync();
-		}
-		public async Task<SuccessionPlan> UpdateAsync(int id, UpdateSuccesionPlanDTO dto)
-		{
-			var plan = await _repository.GetByIdAsync(id);
-			if(plan == null){
-				return null;
-			}
-			plan.EmployeeID = dto.EmployeeID;
-			plan.Position = dto.Position;
-			plan.Timeline = dto.Timeline;
+        public async Task<SuccessionPlanResponseDTO?> GetByIdAsync(int id)
+        {
+            var plan = await _repository.GetByIdAsync(id);
+            return plan is null ? null : MapToResponse(plan);
+        }
 
-			await _repository.UpdateAsync(plan);
-			return plan;
-		}
-		public async Task<bool> DeleteAsync(int id)
-		{
-			var plan = await _repository.GetByIdAsync(id);
-			if(plan == null){
-				return false;
-			}
-			await _repository.DeleteAsync(plan);
-			return true;
+        public async Task<List<SuccessionPlanResponseDTO>> GetAllAsync()
+        {
+            var list = await _repository.GetAllAsync();
+            return list.Select(MapToResponse).ToList();
+        }
 
-		}
-	}
+        public async Task<SuccessionPlanResponseDTO?> UpdateAsync(int id, UpdateSuccesionPlanDTO dto)
+        {
+            var plan = await _repository.GetByIdAsync(id);
+            if (plan is null) return null;
+
+            if (dto.SuccessorID.HasValue) plan.SuccessorID = dto.SuccessorID.Value;
+            if (dto.Status != null) plan.Status = ParseStatus(dto.Status);
+            plan.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(plan);
+            return MapToResponse(plan);
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var plan = await _repository.GetByIdAsync(id);
+            if (plan is null) return false;
+
+            await _repository.DeleteAsync(plan);
+            return true;
+        }
+
+        private static SuccessionPlanResponseDTO MapToResponse(SuccessionPlan p) => new()
+        {
+            SuccessionID = p.SuccessionID,
+            EmployeeID = p.EmployeeID,
+            EmployeeName = p.Employee?.Name,
+            SuccessorID = p.SuccessorID,
+            SuccessorName = p.Successor?.Name,
+            Status = p.Status.ToString(),
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt
+        };
+
+        private static SuccessionStatus ParseStatus(string? value) =>
+            Enum.TryParse<SuccessionStatus>(value, true, out var r) ? r : SuccessionStatus.Planned;
+    }
 }

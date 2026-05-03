@@ -46,5 +46,14 @@ namespace TalentSphere.Repositories
         {
             return await _context.Set<Employee>().AnyAsync(e => e.EmployeeID == employeeId);
         }
+
+        public async Task<IEnumerable<EmployeeDocument>> GetByEmployeeIdAsync(int employeeId)
+        {
+            return await _context.Set<EmployeeDocument>()
+                .AsNoTracking()
+                .Where(d => d.EmployeeID == employeeId && !d.IsDeleted)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+        }
     }
 }

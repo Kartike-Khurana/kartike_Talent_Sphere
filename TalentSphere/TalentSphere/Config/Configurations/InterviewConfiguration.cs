@@ -15,6 +15,8 @@ namespace TalentSphere.Config.Configurations
 
             builder.Property(i => i.Date).IsRequired();
             builder.Property(i => i.Time).IsRequired();
+            builder.Property(i => i.Location).HasMaxLength(200);
+            builder.Property(i => i.Feedback).HasMaxLength(2000);
 
             builder.Property(i => i.Status).HasConversion<string>().HasDefaultValue(InterviewStatus.Scheduled).IsRequired();
 

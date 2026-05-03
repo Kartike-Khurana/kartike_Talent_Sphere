@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TalentSphere.Models;
 using TalentSphere.Enums;
+using TalentSphere.Models;
 
 namespace TalentSphere.Config.Configurations
 {
@@ -14,6 +14,8 @@ namespace TalentSphere.Config.Configurations
             builder.Property(e => e.EnrollmentID).ValueGeneratedOnAdd();
 
             builder.Property(e => e.Date).IsRequired();
+            builder.Property(e => e.Notes).HasMaxLength(1000);
+            builder.Property(e => e.CertificateUrl).HasMaxLength(500);
 
             builder.Property(e => e.status).HasConversion<string>().HasDefaultValue(EnrollmentStatus.Enrolled).IsRequired();
 
@@ -21,8 +23,8 @@ namespace TalentSphere.Config.Configurations
             builder.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property<bool>("IsDeleted").HasDefaultValue(false);
 
-            builder.HasOne<Training>().WithMany().HasForeignKey(e => e.TrainingID).OnDelete(DeleteBehavior.Restrict);
-            builder.HasOne<Employee>().WithMany().HasForeignKey(e => e.EmployeeID).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.Training).WithMany().HasForeignKey(e => e.TrainingID).OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeID).OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

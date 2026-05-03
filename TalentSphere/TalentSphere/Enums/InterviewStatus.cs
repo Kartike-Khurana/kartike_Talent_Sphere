@@ -2,9 +2,11 @@ namespace TalentSphere.Enums
 {
     public enum InterviewStatus
     {
+        Pending,
         Scheduled,
         Completed,
-        Cancelled,
-        Pending
+        Passed,
+        Failed,
+        Cancelled
     }
 }

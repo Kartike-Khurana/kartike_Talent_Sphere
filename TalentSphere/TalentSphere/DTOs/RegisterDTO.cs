@@ -16,8 +16,7 @@ namespace TalentSphere.DTOs
         [StringLength(255, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters.")]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Phone is required.")]
         [Phone(ErrorMessage = "Phone format is invalid.")]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
     }
 }

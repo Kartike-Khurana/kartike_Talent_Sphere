@@ -13,7 +13,7 @@ namespace TalentSphere.Models
 
         public string PasswordHash { get; set; }
 
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         public UserStatus Status { get; set; }
 

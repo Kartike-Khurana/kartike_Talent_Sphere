@@ -1,15 +1,15 @@
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
-using TalentSphere.Services;
-using Microsoft.AspNetCore.Authorization;
+
 namespace TalentSphere.Controllers
 {
-
     [ApiController]
     [Route("api/employeedocs")]
     public class EmployeeDocumentsController : ControllerBase
@@ -25,54 +25,7 @@ namespace TalentSphere.Controllers
             _auditLogHelper = auditLogHelper;
         }
 
-        [Authorize(Roles="Admin, Candidate, Employee")]
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateEmployeeDocumentDTO dto)
-        {
-            //if (!ModelState.IsValid)
-            //    return BadRequest(ModelState);
-
-            //try
-            //{
-                var doc = await _service.CreateEmployeeDocumentAsync(dto);
-
-                if (doc == null)
-                    return NotFound(new { message = $"Employee with ID {doc?.EmployeeID} not found." });
-
-                // Audit log: who created this document
-                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
-                if (userId.HasValue && doc != null)
-                {
-                    await _auditLogHelper.LogActionAsync(userId.Value, "Create", "EmployeeDocument", $"Document {doc.DocumentID} created for Employee {doc.EmployeeID}");
-                }
-
-                return CreatedAtAction(nameof(GetById), new { id = doc.DocumentID }, doc);
-            //}
-            //catch (System.ArgumentException ex)
-            //{
-            //    return BadRequest(new { message = ex.Message });
-            //}
-            //catch (System.Collections.Generic.KeyNotFoundException ex)
-            //{
-            //    return NotFound(new { message = ex.Message });
-            //}
-            //catch (System.Exception ex)
-            //{
-            //    return StatusCode(500, new { Message = "An error occurred while creating the document.", Error = ex.Message });
-            //}
-        }
-        [Authorize(Roles = "Admin, Candidate, Employee")]
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var doc = await _service.GetByIdAsync(id);
-            if (doc == null)
-                return NotFound();
-            return Ok(doc);
-        }
-        [Authorize(Roles = "Admin, HR")]
-
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -86,24 +39,90 @@ namespace TalentSphere.Controllers
                 return StatusCode(500, new { Message = "An error occurred while fetching documents.", Error = ex.Message });
             }
         }
-        [Authorize(Roles = "Admin, Candidate, Employee")]
-        [HttpPut("{id}")]
+
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpGet("employee/{employeeId:int}")]
+        public async Task<IActionResult> GetByEmployee(int employeeId)
+        {
+            var docs = await _service.GetByEmployeeIdAsync(employeeId);
+            return Ok(docs);
+        }
+
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var doc = await _service.GetByIdAsync(id);
+            if (doc == null) return NotFound();
+            return Ok(doc);
+        }
+
+        // Real file upload — accepts multipart/form-data
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload([FromForm] int employeeId, [FromForm] string docType, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest(new { message = "File size must not exceed 10 MB." });
+
+            var doc = await _service.UploadDocumentAsync(employeeId, docType, file);
+            if (doc == null)
+                return NotFound(new { message = $"Employee {employeeId} not found." });
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Upload", "EmployeeDocument",
+                    $"Document {doc.DocumentID} ({docType}) uploaded for Employee {employeeId}");
+
+            return CreatedAtAction(nameof(GetById), new { id = doc.DocumentID }, doc);
+        }
+
+        // HR/Admin sends a "please upload your documents" reminder to an employee
+        [Authorize(Roles = "Admin,HR")]
+        [HttpPost("notify/{employeeId:int}")]
+        public async Task<IActionResult> SendReminder(int employeeId)
+        {
+            var sent = await _service.SendDocumentReminderAsync(employeeId);
+            if (!sent)
+                return NotFound(new { message = $"Employee {employeeId} not found." });
+
+            return Ok(new { message = "Document upload reminder sent successfully." });
+        }
+
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateEmployeeDocumentDTO dto)
+        {
+            var doc = await _service.CreateEmployeeDocumentAsync(dto);
+            if (doc == null)
+                return NotFound(new { message = $"Employee {dto.EmployeeID} not found." });
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Create", "EmployeeDocument",
+                    $"Document {doc.DocumentID} created for Employee {doc.EmployeeID}");
+
+            return CreatedAtAction(nameof(GetById), new { id = doc.DocumentID }, doc);
+        }
+
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateEmployeeDocumentDTO dto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                if (!ModelState.IsValid) return BadRequest(ModelState);
 
                 var updated = await _service.UpdateEmployeeDocumentAsync(id, dto);
                 if (updated == null)
-                    return NotFound(new { message = $"Document with ID {id} not found." });
+                    return NotFound(new { message = $"Document {id} not found." });
 
                 var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
                 if (userId.HasValue)
-                {
                     await _auditLogHelper.LogActionAsync(userId.Value, "Update", "EmployeeDocument", $"Document {id} updated");
-                }
 
                 return Ok(new { message = "Document updated successfully.", data = updated });
             }
@@ -112,21 +131,20 @@ namespace TalentSphere.Controllers
                 return StatusCode(500, new { Message = "An error occurred while updating the document.", Error = ex.Message });
             }
         }
+
         [Authorize(Roles = "Admin")]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
                 var deleted = await _service.DeleteEmployeeDocumentAsync(id);
                 if (!deleted)
-                    return NotFound(new { message = $"Document with ID {id} not found." });
+                    return NotFound(new { message = $"Document {id} not found." });
 
                 var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
                 if (userId.HasValue)
-                {
                     await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "EmployeeDocument", $"Document {id} deleted");
-                }
 
                 return Ok(new { message = "Document deleted successfully." });
             }

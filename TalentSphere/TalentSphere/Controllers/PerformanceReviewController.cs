@@ -1,93 +1,84 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TalentSphere.DTOs.PerformanceReview;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
     [ApiController]
-    [Route("api/PerformanceReview")]
+    [Route("api/performance-reviews")]
     public class PerformanceReviewController : ControllerBase
     {
         private readonly IPerformanceReviewService _service;
+        private readonly AuditLogHelper _auditLogHelper;
 
-        public PerformanceReviewController(IPerformanceReviewService service)
+        public PerformanceReviewController(IPerformanceReviewService service, AuditLogHelper auditLogHelper)
         {
             _service = service;
+            _auditLogHelper = auditLogHelper;
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,HR,Manager")]
         public async Task<ActionResult<PerformanceReviewDTO>> Create([FromBody] CreatePerformanceReviewDTO dto)
         {
-            // Check if the payload is completely missing
-            if (dto == null) return BadRequest("Review data is required.");
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var managerId))
+                return Unauthorized(new { message = "Could not determine current user." });
 
-            // Check if Data Annotations (Required, Range, etc.) are valid
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var result = await _service.CreateReviewAsync(dto, managerId);
 
-            try
-            {
-                var result = await _service.CreateReviewAsync(dto);
-                return CreatedAtAction(nameof(GetById), new { id = result.ReviewID }, result);
-            }
-            catch (Exception ex)
-            {
-                // Returns a 500 error if the database or mapping fails
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            await _auditLogHelper.LogActionAsync(managerId, "Create", "PerformanceReview", $"Performance review created for employee {dto.EmployeeID}");
+
+            return CreatedAtAction(nameof(GetById), new { id = result.ReviewID }, result);
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
         public async Task<ActionResult<IEnumerable<PerformanceReviewListDTO>>> GetAll([FromQuery] int? employeeId)
         {
-            try
-            {
-                var reviews = await _service.GetAllReviewsAsync(employeeId);
-                return Ok(reviews);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error retrieving reviews: {ex.Message}");
-            }
+            var reviews = await _service.GetAllReviewsAsync(employeeId);
+            return Ok(reviews);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,HR,Manager,Employee")]
         public async Task<ActionResult<PerformanceReviewDTO>> GetById(int id)
         {
-            try
-            {
-                var review = await _service.GetByIdAsync(id);
-                if (review == null) return NotFound($"Review with ID {id} not found.");
-
-                return Ok(review);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error retrieving review details: {ex.Message}");
-            }
+            var review = await _service.GetByIdAsync(id);
+            if (review is null)
+                return NotFound(new { message = $"Review {id} not found." });
+            return Ok(review);
         }
 
-
-
-
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = "Admin,HR,Manager")]
         public async Task<ActionResult<PerformanceReviewDTO>> Update(int id, [FromBody] UpdatePerformanceReviewDTO dto)
         {
-            if (dto == null) return BadRequest("Update data is required.");
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var updated = await _service.UpdateReviewAsync(id, dto);
+            if (updated is null) return NotFound(new { message = $"Review {id} not found." });
 
-            try
-            {
-                var updatedReview = await _service.UpdateReviewAsync(id, dto);
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Update", "PerformanceReview", $"Performance review {id} updated");
 
-                if (updatedReview == null)
-                    return NotFound($"Cannot update. Review with ID {id} not found.");
+            return Ok(updated);
+        }
 
-                return Ok(updatedReview);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error updating review: {ex.Message}");
-            }
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin,HR,Manager")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deleted = await _service.DeleteReviewAsync(id);
+            if (!deleted) return NotFound(new { message = $"Review {id} not found." });
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "PerformanceReview", $"Performance review {id} deleted");
+
+            return Ok(new { message = "Performance review deleted." });
         }
     }
 }

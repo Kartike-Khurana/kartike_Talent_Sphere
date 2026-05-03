@@ -1,41 +1,51 @@
-﻿using System;
-using System.Threading.Tasks;
 using AutoMapper;
 using TalentSphere.DTOs;
+using TalentSphere.Enums;
 using TalentSphere.Models;
-using TalentSphere.Services.Interfaces;
 using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Services
 {
     public class ResumeService : IResumeService
     {
         private readonly IResumeRepository _repository;
+        private readonly IFileStorageService _fileStorage;
         private readonly IMapper _mapper;
 
-        public ResumeService(IResumeRepository repository, IMapper mapper)
+        public ResumeService(
+            IResumeRepository repository,
+            IFileStorageService fileStorage,
+            IMapper mapper)
         {
             _repository = repository;
+            _fileStorage = fileStorage;
             _mapper = mapper;
         }
 
-        public async Task<ResumeResponseDTO> CreateResumeAsync(CreateResumeDTO dto)
+        public async Task<ResumeResponseDTO> UploadResumeAsync(int candidateId, IFormFile file)
         {
-            var resume = _mapper.Map<Resume>(dto);
-            resume.CreatedAt = DateTime.UtcNow;
-            resume.IsDeleted = false;
+            var uri = await _fileStorage.SaveResumeAsync(file, candidateId);
 
-            var added = await _repository.AddAsync(resume);
+            var resume = new Resume
+            {
+                CandidateID  = candidateId,
+                FileURI      = uri,
+                UploadedDate = DateTime.UtcNow,
+                Status       = ResumeStatus.Active,
+                CreatedAt    = DateTime.UtcNow,
+                IsDeleted    = false
+            };
+
+            await _repository.AddAsync(resume);
             await _repository.SaveChangesAsync();
-            return _mapper.Map<ResumeResponseDTO>(added);
+            return _mapper.Map<ResumeResponseDTO>(resume);
         }
 
-        public async Task<ResumeResponseDTO> GetByIdAsync(int id)
+        public async Task<ResumeResponseDTO?> GetByIdAsync(int id)
         {
-            var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
-                return null;
-            return _mapper.Map<ResumeResponseDTO>(existing);
+            var resume = await _repository.GetByIdAsync(id);
+            return resume is null ? null : _mapper.Map<ResumeResponseDTO>(resume);
         }
 
         public async Task<IEnumerable<ResumeResponseDTO>> GetAllAsync()
@@ -44,15 +54,25 @@ namespace TalentSphere.Services
             return _mapper.Map<IEnumerable<ResumeResponseDTO>>(list);
         }
 
-        public async Task<ResumeResponseDTO> UpdateResumeAsync(int id, UpdateResumeDTO dto)
+        public async Task<IEnumerable<ResumeResponseDTO>> GetByCandidateIdAsync(int candidateId)
+        {
+            var list = await _repository.GetByCandidateIdAsync(candidateId);
+            return _mapper.Map<IEnumerable<ResumeResponseDTO>>(list);
+        }
+
+        public async Task<ResumeResponseDTO?> ReplaceFileAsync(int id, IFormFile file)
         {
             var resume = await _repository.GetByIdAsync(id);
-            if (resume == null)
-                return null;
+            if (resume is null) return null;
 
-            // Map provided fields onto existing resume. AutoMapper will only overwrite when dto has values.
-            _mapper.Map(dto, resume);
-            resume.UpdatedAt = DateTime.UtcNow;
+            // Delete old file from disk first
+            _fileStorage.DeleteFile(resume.FileURI);
+
+            // Save new file
+            var uri = await _fileStorage.SaveResumeAsync(file, resume.CandidateID);
+            resume.FileURI      = uri;
+            resume.UploadedDate = DateTime.UtcNow;
+            resume.UpdatedAt    = DateTime.UtcNow;
 
             await _repository.SaveChangesAsync();
             return _mapper.Map<ResumeResponseDTO>(resume);
@@ -61,11 +81,12 @@ namespace TalentSphere.Services
         public async Task<bool> DeleteResumeAsync(int id)
         {
             var resume = await _repository.GetByIdAsync(id);
-            if (resume == null)
-                return false;
+            if (resume is null) return false;
 
-            resume.IsDeleted = true;
-            resume.UpdatedAt = DateTime.UtcNow;
+            // Soft-delete the record; leave the file on disk
+            // (file cleanup can be a background job; avoids accidental data loss)
+            resume.IsDeleted  = true;
+            resume.UpdatedAt  = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
             return true;
         }

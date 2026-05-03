@@ -1,16 +1,13 @@
-﻿using TalentSphere.DTOs;
-using TalentSphere.Models;
+using TalentSphere.DTOs;
 
 namespace TalentSphere.Services.Interfaces
 {
-	public interface ISuccessionPlanService
-	{
-		Task<SuccessionPlan> CreateSuccessionPlanAsync(CreateSuccessionPlanDTO dto);
-		Task<SuccessionPlan> GetByIdAsync(int id);
-		Task<List<SuccessionPlan>> GetAllAsync();
-		Task<bool> DeleteAsync(int id);
-		Task<SuccessionPlan> UpdateAsync(int id, UpdateSuccesionPlanDTO dto);
-
-
-	}
+    public interface ISuccessionPlanService
+    {
+        Task<SuccessionPlanResponseDTO> CreateSuccessionPlanAsync(CreateSuccessionPlanDTO dto);
+        Task<SuccessionPlanResponseDTO?> GetByIdAsync(int id);
+        Task<List<SuccessionPlanResponseDTO>> GetAllAsync();
+        Task<SuccessionPlanResponseDTO?> UpdateAsync(int id, UpdateSuccesionPlanDTO dto);
+        Task<bool> DeleteAsync(int id);
+    }
 }

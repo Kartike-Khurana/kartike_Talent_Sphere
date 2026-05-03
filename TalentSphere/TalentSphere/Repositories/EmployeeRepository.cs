@@ -25,7 +25,8 @@ namespace TalentSphere.Repositories
         {
             return await _context.Set<Employee>()
                 .Include(e => e.User)
-                .FirstOrDefaultAsync(e => e.EmployeeID == id && !EF.Property<bool>(e, "IsDeleted"));
+                .Include(e => e.Manager)
+                .FirstOrDefaultAsync(e => e.EmployeeID == id && !e.IsDeleted);
         }
 
         public async Task SaveChangesAsync()
@@ -37,8 +38,9 @@ namespace TalentSphere.Repositories
         {
             return await _context.Set<Employee>()
                 .Include(e => e.User)
+                .Include(e => e.Manager)
                 .AsNoTracking()
-                .Where(e => !EF.Property<bool>(e, "IsDeleted"))
+                .Where(e => !e.IsDeleted)
                 .ToListAsync();
         }
 
@@ -46,7 +48,8 @@ namespace TalentSphere.Repositories
         {
             return await _context.Set<Employee>()
                 .Include(e => e.User)
-                .Where(e => e.UserId == userId && !EF.Property<bool>(e, "IsDeleted"))
+                .Include(e => e.Manager)
+                .Where(e => e.UserId == userId && !e.IsDeleted)
                 .ToListAsync();
         }
     }

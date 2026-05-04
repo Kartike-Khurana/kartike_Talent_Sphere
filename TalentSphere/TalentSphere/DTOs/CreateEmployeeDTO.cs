@@ -21,5 +21,7 @@ namespace TalentSphere.DTOs
         public DateTime? JoinDate { get; set; }
 
         public EmployeeStatus Status { get; set; }
+
+        public int? ManagerID { get; set; }
     }
 }

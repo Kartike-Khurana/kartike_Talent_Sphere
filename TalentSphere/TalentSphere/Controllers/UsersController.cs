@@ -126,10 +126,10 @@ namespace TalentSphere.Controllers
                 if (user.IsDeleted)
                     return Unauthorized(new { message = "User account has been deleted." });
 
-                //Check user status
-                if (user.Status == UserStatus.Inactive || user.Status == UserStatus.Suspended || user.Status == UserStatus.Suspended || user.Status == UserStatus.Deleted)
+                // Block all non-Active accounts
+                if (user.Status != UserStatus.Active)
                 {
-                    string err = $"Your account is {user.Status} and requires admin approval to activate.";
+                    string err = $"Your account is {user.Status}. Please contact an administrator to reactivate it.";
                     return Unauthorized(new { message = err });
                 }
 

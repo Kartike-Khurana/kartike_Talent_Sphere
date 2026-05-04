@@ -43,6 +43,7 @@ namespace TalentSphere.Services
             employee.CreatedAt = DateTime.UtcNow;
             if (employee.Status == 0)
                 employee.Status = EmployeeStatus.Active;
+            employee.ManagerID = dto.ManagerID;
 
             var added = await _repository.AddAsync(employee);
             await _repository.SaveChangesAsync();
@@ -119,6 +120,7 @@ namespace TalentSphere.Services
 
             // Apply partial update via AutoMapper mapping profile (ignore null/whitespace)
             _mapper.Map(dto, employee);
+            employee.ManagerID = dto.ManagerID;
             employee.UpdatedAt = DateTime.UtcNow;
 
             await _repository.SaveChangesAsync();

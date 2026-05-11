@@ -53,6 +53,28 @@ namespace TalentSphere.Controllers
             }
         }
 
+        /// <summary>
+        /// Get users eligible to conduct interviews — only HR, Manager, and Recruiter roles.
+        /// Used to populate the Interviewer dropdown when scheduling interviews.
+        /// </summary>
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager")]
+        [HttpGet("interviewers")]
+        [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetInterviewers()
+        {
+            try
+            {
+                var eligibleRoles = new[] { "HR", "Manager", "Recruiter" };
+                var users = await _userRoleRepository.GetUsersByRolesAsync(eligibleRoles);
+                var dtos = _mapper.Map<IEnumerable<UserResponseDto>>(users);
+                return Ok(new { message = "Eligible interviewers retrieved successfully.", data = dtos });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching interviewers.", Error = ex.Message });
+            }
+        }
+
 
 
         /// <summary>

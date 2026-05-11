@@ -37,7 +37,8 @@ namespace TalentSphere.Controllers
             if (userId.HasValue)
                 await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Application", $"Application submitted for job {dto.JobID}");
 
-            return Ok(new { message = "Application submitted successfully.", data = application });
+            return CreatedAtAction(nameof(GetById), new { id = application.ApplicationID },
+                new { message = "Application submitted successfully.", data = application });
         }
 
         /// <summary>Get a single application by ID.</summary>
@@ -84,11 +85,19 @@ namespace TalentSphere.Controllers
             return Ok(new { message = "Applications for job retrieved.", data = applications });
         }
 
-        /// <summary>Get all applications submitted by a specific candidate.</summary>
+        /// <summary>Get all applications submitted by a specific candidate. Candidates may only view their own.</summary>
         [Authorize(Roles = "Admin,HR,Recruiter,Candidate")]
         [HttpGet("candidate/{candidateId}")]
         public async Task<IActionResult> GetByCandidate(int candidateId)
         {
+            // Enforce that a Candidate can only query their own applications
+            if (User.IsInRole("Candidate"))
+            {
+                var callerIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(callerIdStr, out var callerId) || callerId != candidateId)
+                    return Forbid();
+            }
+
             var applications = await _applicationService.GetByCandidateIdAsync(candidateId);
             return Ok(new { message = "Applications for candidate retrieved.", data = applications });
         }
@@ -110,11 +119,23 @@ namespace TalentSphere.Controllers
             return Ok(new { message = "Application updated.", data = updated });
         }
 
-        /// <summary>Soft-delete an application.</summary>
+        /// <summary>Soft-delete an application. Candidates may only delete their own applications.</summary>
         [Authorize(Roles = "Admin,Candidate,Recruiter")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            // Candidates must own the application they are deleting
+            if (User.IsInRole("Candidate"))
+            {
+                var app = await _applicationService.GetByIdAsync(id);
+                if (app == null)
+                    return NotFound(new { message = $"Application {id} not found." });
+
+                var callerIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(callerIdStr, out var callerId) || app.CandidateID != callerId)
+                    return Forbid();
+            }
+
             var deleted = await _applicationService.DeleteApplicationAsync(id);
             if (!deleted) return NotFound(new { message = $"Application {id} not found." });
 

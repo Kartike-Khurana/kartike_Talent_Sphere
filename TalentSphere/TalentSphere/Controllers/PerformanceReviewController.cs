@@ -12,11 +12,13 @@ namespace TalentSphere.Controllers
     public class PerformanceReviewController : ControllerBase
     {
         private readonly IPerformanceReviewService _service;
+        private readonly IEmployeeService _employeeService;
         private readonly AuditLogHelper _auditLogHelper;
 
-        public PerformanceReviewController(IPerformanceReviewService service, AuditLogHelper auditLogHelper)
+        public PerformanceReviewController(IPerformanceReviewService service, IEmployeeService employeeService, AuditLogHelper auditLogHelper)
         {
             _service = service;
+            _employeeService = employeeService;
             _auditLogHelper = auditLogHelper;
         }
 
@@ -24,6 +26,9 @@ namespace TalentSphere.Controllers
         [Authorize(Roles = "Admin,HR,Manager")]
         public async Task<ActionResult<PerformanceReviewDTO>> Create([FromBody] CreatePerformanceReviewDTO dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdClaim, out var managerId))
                 return Unauthorized(new { message = "Could not determine current user." });
@@ -35,10 +40,30 @@ namespace TalentSphere.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.ReviewID }, result);
         }
 
+        /// <summary>
+        /// Get reviews. Admins/HR/Managers see all (or filtered by employeeId).
+        /// Employees are automatically scoped to their own record — they cannot pass an arbitrary employeeId.
+        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin,HR,Manager,Employee")]
         public async Task<ActionResult<IEnumerable<PerformanceReviewListDTO>>> GetAll([FromQuery] int? employeeId)
         {
+            // Employees may only see their own reviews — resolve their employee record and enforce scope
+            if (User.IsInRole("Employee") && !User.IsInRole("Admin") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+            {
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdStr, out var userId))
+                    return Unauthorized(new { message = "Could not determine current user." });
+
+                var employeeRecords = await _employeeService.GetByUserIdAsync(userId);
+                var employeeRecord = employeeRecords.FirstOrDefault();
+                if (employeeRecord == null)
+                    return NotFound(new { message = "No employee record found for your account." });
+
+                // Override any supplied employeeId — employees cannot query other people's reviews
+                employeeId = employeeRecord.EmployeeID;
+            }
+
             var reviews = await _service.GetAllReviewsAsync(employeeId);
             return Ok(reviews);
         }

@@ -33,7 +33,7 @@ namespace TalentSphere.Services
                 MaxCapacity = dto.MaxCapacity,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                status = ParseTrainingStatus(dto.Status),
+                Status = ParseTrainingStatus(dto.Status),
                 CreatedAt = DateTime.UtcNow,
                 IsDeleted = false
             };
@@ -72,7 +72,7 @@ namespace TalentSphere.Services
             if (dto.MaxCapacity.HasValue) training.MaxCapacity = dto.MaxCapacity;
             if (dto.StartDate.HasValue) training.StartDate = dto.StartDate.Value;
             if (dto.EndDate.HasValue) training.EndDate = dto.EndDate.Value;
-            if (dto.Status != null) training.status = ParseTrainingStatus(dto.Status);
+            if (dto.Status != null) training.Status = ParseTrainingStatus(dto.Status);
             training.UpdatedAt = DateTime.UtcNow;
 
             await _repository.SaveChangesAsync();
@@ -97,16 +97,16 @@ namespace TalentSphere.Services
             var now = DateTime.UtcNow;
 
             var total = enrollments.Count;
-            var completed = enrollments.Count(e => e.status == EnrollmentStatus.Completed);
+            var completed = enrollments.Count(e => e.Status == EnrollmentStatus.Completed);
             var overdue = enrollments.Count(e =>
-                e.status != EnrollmentStatus.Completed &&
-                e.status != EnrollmentStatus.Cancelled &&
+                e.Status != EnrollmentStatus.Completed &&
+                e.Status != EnrollmentStatus.Cancelled &&
                 e.DueDate.HasValue && e.DueDate.Value < now);
 
             return new TrainingStatsDTO
             {
                 TotalTrainings = trainings.Count,
-                ActiveTrainings = trainings.Count(t => t.status == TrainingStatus.Active),
+                ActiveTrainings = trainings.Count(t => t.Status == TrainingStatus.Active),
                 TotalEnrollments = total,
                 CompletedEnrollments = completed,
                 OverdueEnrollments = overdue,
@@ -130,7 +130,7 @@ namespace TalentSphere.Services
             StartDate = t.StartDate,
             EndDate = t.EndDate,
             DurationDays = (t.EndDate - t.StartDate).Days,
-            Status = t.status.ToString(),
+            Status = t.Status.ToString(),
             CreatedAt = t.CreatedAt,
             UpdatedAt = t.UpdatedAt
         };

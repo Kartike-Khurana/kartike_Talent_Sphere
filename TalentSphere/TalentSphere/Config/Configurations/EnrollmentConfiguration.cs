@@ -17,7 +17,7 @@ namespace TalentSphere.Config.Configurations
             builder.Property(e => e.Notes).HasMaxLength(1000);
             builder.Property(e => e.CertificateUrl).HasMaxLength(500);
 
-            builder.Property(e => e.status).HasConversion<string>().HasDefaultValue(EnrollmentStatus.Enrolled).IsRequired();
+            builder.Property(e => e.Status).HasConversion<string>().HasDefaultValue(EnrollmentStatus.Enrolled).IsRequired();
 
             builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");

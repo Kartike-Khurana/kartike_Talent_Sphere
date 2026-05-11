@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TalentSphere.DTOs;
 using TalentSphere.Models;
 using TalentSphere.Repositories.Interfaces;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 namespace TalentSphere.Controllers
 {
@@ -15,11 +16,13 @@ namespace TalentSphere.Controllers
     {
         private readonly IUserRoleService _service;
         private readonly IMapper _mapper;
+        private readonly AuditLogHelper _auditLogHelper;
 
-        public UserRolesController(IUserRoleService service, IMapper mapper)
+        public UserRolesController(IUserRoleService service, IMapper mapper, AuditLogHelper auditLogHelper)
         {
             _service = service;
             _mapper = mapper;
+            _auditLogHelper = auditLogHelper;
         }
 
         [HttpPost]
@@ -30,6 +33,11 @@ namespace TalentSphere.Controllers
                 return BadRequest(ModelState);
 
             var userRole = await _service.CreateUserRoleAsync(dto);
+
+            var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+            if (userId.HasValue)
+                await _auditLogHelper.LogActionAsync(userId.Value, "Create", "UserRole", $"Role {dto.RoleId} assigned to user {dto.UserId}");
+
             return CreatedAtAction(nameof(GetById), new { id = userRole.UserRoleId }, userRole);
         }
 
@@ -71,6 +79,10 @@ namespace TalentSphere.Controllers
                 if (updated == null)
                     return NotFound(new { message = $"UserRole with ID {id} not found." });
 
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Update", "UserRole", $"UserRole {id} updated — user {dto.UserId} → role {dto.RoleId}");
+
                 return Ok(new { message = "UserRole updated successfully.", data = updated });
             }
             catch (System.Exception ex)
@@ -88,6 +100,10 @@ namespace TalentSphere.Controllers
                 var deleted = await _service.DeleteUserRoleAsync(id);
                 if (!deleted)
                     return NotFound(new { message = $"UserRole with ID {id} not found." });
+
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "UserRole", $"UserRole {id} deleted (role revoked)");
 
                 return Ok(new { message = "UserRole deleted successfully." });
             }

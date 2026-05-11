@@ -13,5 +13,8 @@ namespace TalentSphere.Repositories.Interfaces
         Task<IEnumerable<UserRole>> GetAllAsync();
         Task UpdateAsync(UserRole userRole);
         Task SaveChangesAsync();
+
+        /// <summary>Returns distinct active Users who hold any of the specified role names.</summary>
+        Task<IEnumerable<User>> GetUsersByRolesAsync(IEnumerable<string> roleNames);
     }
 }

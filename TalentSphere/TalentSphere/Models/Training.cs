@@ -17,7 +17,7 @@ namespace TalentSphere.Models
         public int? MaxCapacity { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public TrainingStatus status { get; set; }
+        public TrainingStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; }

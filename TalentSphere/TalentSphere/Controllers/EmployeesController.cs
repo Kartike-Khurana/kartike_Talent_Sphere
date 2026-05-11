@@ -153,6 +153,15 @@ namespace TalentSphere.Controllers
                 var employee = await _employeeService.GetByIdAsync(id);
                 if (employee == null)
                     return NotFound();
+
+                // Employees may only access their own record, not any other employee's
+                if (User.IsInRole("Employee") && !User.IsInRole("Admin") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+                {
+                    var callerIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (int.TryParse(callerIdStr, out var callerId) && employee.UserId != callerId)
+                        return Forbid();
+                }
+
                 return Ok(employee);
             }
             catch (System.Exception)

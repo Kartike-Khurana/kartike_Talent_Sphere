@@ -74,6 +74,8 @@ namespace TalentSphere.Controllers
         [Authorize(Roles = "Admin,HR,Recruiter")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateScreeningDTO dto)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             var updated = await _screeningService.UpdateScreeningAsync(id, dto);
             if (updated is null) return NotFound(new { message = $"Screening {id} not found." });
 

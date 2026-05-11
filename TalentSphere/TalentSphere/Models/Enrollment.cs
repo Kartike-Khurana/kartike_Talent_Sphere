@@ -16,7 +16,7 @@ namespace TalentSphere.Models
         public int? Score { get; set; }
         public string? Notes { get; set; }
         public string? CertificateUrl { get; set; }
-        public EnrollmentStatus status { get; set; }
+        public EnrollmentStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; }

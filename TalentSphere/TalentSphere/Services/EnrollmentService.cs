@@ -34,7 +34,7 @@ namespace TalentSphere.Services
             var training = await _trainingRepository.GetByIdAsync(dto.TrainingID)
                 ?? throw new KeyNotFoundException($"Training {dto.TrainingID} not found.");
 
-            if (training.status == TrainingStatus.Cancelled)
+            if (training.Status == TrainingStatus.Cancelled)
                 throw new InvalidOperationException("Cannot enroll in a cancelled training.");
 
             var employee = await _employeeRepository.GetByIdAsync(dto.EmployeeID)
@@ -48,7 +48,7 @@ namespace TalentSphere.Services
                 EmployeeID = dto.EmployeeID,
                 Date = DateOnly.FromDateTime(now),
                 DueDate = dto.DueDate,
-                status = trainingStarted ? EnrollmentStatus.InProgress : EnrollmentStatus.Enrolled,
+                Status = trainingStarted ? EnrollmentStatus.InProgress : EnrollmentStatus.Enrolled,
                 StartedAt = trainingStarted ? now : null,
                 CreatedAt = now,
                 IsDeleted = false
@@ -103,14 +103,14 @@ namespace TalentSphere.Services
             var enrollment = await _repository.GetByIdAsync(id);
             if (enrollment is null) return null;
 
-            if (enrollment.status == EnrollmentStatus.Cancelled)
+            if (enrollment.Status == EnrollmentStatus.Cancelled)
                 throw new InvalidOperationException("Cannot start a cancelled enrollment.");
-            if (enrollment.status == EnrollmentStatus.Completed)
+            if (enrollment.Status == EnrollmentStatus.Completed)
                 throw new InvalidOperationException("Enrollment is already completed.");
-            if (enrollment.status == EnrollmentStatus.InProgress)
+            if (enrollment.Status == EnrollmentStatus.InProgress)
                 throw new InvalidOperationException("Enrollment is already in progress.");
 
-            enrollment.status = EnrollmentStatus.InProgress;
+            enrollment.Status = EnrollmentStatus.InProgress;
             enrollment.StartedAt = DateTime.UtcNow;
             enrollment.UpdatedAt = DateTime.UtcNow;
 
@@ -125,12 +125,12 @@ namespace TalentSphere.Services
             var enrollment = await _repository.GetByIdAsync(id);
             if (enrollment is null) return null;
 
-            if (enrollment.status == EnrollmentStatus.Cancelled)
+            if (enrollment.Status == EnrollmentStatus.Cancelled)
                 throw new InvalidOperationException("Cannot complete a cancelled enrollment.");
-            if (enrollment.status == EnrollmentStatus.Completed)
+            if (enrollment.Status == EnrollmentStatus.Completed)
                 throw new InvalidOperationException("Enrollment is already completed.");
 
-            enrollment.status = EnrollmentStatus.Completed;
+            enrollment.Status = EnrollmentStatus.Completed;
             enrollment.CompletedAt = DateTime.UtcNow;
             if (!enrollment.StartedAt.HasValue) enrollment.StartedAt = DateTime.UtcNow;
             if (dto.Score.HasValue) enrollment.Score = dto.Score;
@@ -179,8 +179,8 @@ namespace TalentSphere.Services
 
         private static EnrollmentResponseDTO MapToResponse(Enrollment e)
         {
-            var isOverdue = e.status != EnrollmentStatus.Completed &&
-                            e.status != EnrollmentStatus.Cancelled &&
+            var isOverdue = e.Status != EnrollmentStatus.Completed &&
+                            e.Status != EnrollmentStatus.Cancelled &&
                             e.DueDate.HasValue && e.DueDate.Value < DateTime.UtcNow;
             return new EnrollmentResponseDTO
             {
@@ -203,7 +203,7 @@ namespace TalentSphere.Services
                 Score = e.Score,
                 Notes = e.Notes,
                 CertificateUrl = e.CertificateUrl,
-                Status = isOverdue ? "Overdue" : e.status.ToString(),
+                Status = isOverdue ? "Overdue" : e.Status.ToString(),
                 IsOverdue = isOverdue,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt

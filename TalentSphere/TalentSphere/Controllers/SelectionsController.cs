@@ -121,10 +121,30 @@ namespace TalentSphere.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> GetAllSelections()
+        public async Task<IActionResult> GetAllSelections(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
             var selections = await _selectionService.GetAllSelectionsAsync();
-            return !selections.Any() ? NoContent() : Ok(selections);
+            if (!selections.Any()) return NoContent();
+
+            var paged = selections
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Ok(new
+            {
+                message = "Selections retrieved.",
+                data = paged,
+                totalCount = selections.Count(),
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling((double)selections.Count() / pageSize)
+            });
         }
 
         [Authorize(Roles = "Admin,HR")]

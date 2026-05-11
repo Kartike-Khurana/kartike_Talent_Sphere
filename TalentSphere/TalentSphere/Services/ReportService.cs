@@ -153,13 +153,13 @@ namespace TalentSphere.Services
             var byTraining = trainings.Select(t =>
             {
                 var tEnrollments = enrollments.Where(e => e.TrainingID == t.TrainingID).ToList();
-                var completed = tEnrollments.Count(e => e.status == EnrollmentStatus.Completed);
+                var completed = tEnrollments.Count(e => e.Status == EnrollmentStatus.Completed);
                 var total = tEnrollments.Count;
                 return new TrainingCompletionDTO
                 {
                     TrainingID = t.TrainingID,
                     Title = t.Title,
-                    Status = t.status.ToString(),
+                    Status = t.Status.ToString(),
                     EnrollmentCount = total,
                     CompletedCount = completed,
                     CompletionRate = total == 0 ? 0 : Math.Round((double)completed / total * 100, 1)
@@ -169,7 +169,7 @@ namespace TalentSphere.Services
             .ToList();
 
             var totalEnrollments = enrollments.Count;
-            var totalCompleted = enrollments.Count(e => e.status == EnrollmentStatus.Completed);
+            var totalCompleted = enrollments.Count(e => e.Status == EnrollmentStatus.Completed);
 
             return new TrainingAnalyticsDTO
             {

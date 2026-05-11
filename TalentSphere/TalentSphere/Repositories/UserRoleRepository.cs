@@ -64,5 +64,21 @@ namespace TalentSphere.Repositories
             _context.Set<UserRole>().Update(userRole);
             await Task.CompletedTask;
         }
+
+        public async Task<IEnumerable<User>> GetUsersByRolesAsync(IEnumerable<string> roleNames)
+        {
+            return await _context.Set<UserRole>()
+                .Include(ur => ur.Role)
+                .Include(ur => ur.User)
+                .Where(ur =>
+                    !ur.IsDeleted &&
+                    !ur.User.IsDeleted &&
+                    ur.User.Status == Enums.UserStatus.Active &&
+                    roleNames.Contains(ur.Role.Name.ToString()))
+                .Select(ur => ur.User)
+                .Distinct()
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

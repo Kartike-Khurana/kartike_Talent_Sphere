@@ -142,10 +142,28 @@ namespace TalentSphere.Controllers
         [Authorize(Roles = "Admin,HR,Recruiter,Manager")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllInterviews()
+        public async Task<IActionResult> GetAllInterviews(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
             var interviews = await _interviewService.GetAllInterviewsAsync();
-            return Ok(new { message = "Interviews retrieved successfully.", data = interviews });
+            var paged = interviews
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Ok(new
+            {
+                message = "Interviews retrieved successfully.",
+                data = paged,
+                totalCount = interviews.Count,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling((double)interviews.Count / pageSize)
+            });
         }
 
         [Authorize(Roles = "Admin,HR,Recruiter")]

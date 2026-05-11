@@ -1,19 +1,24 @@
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentSphere.DTOs;
+using TalentSphere.Services;
 using TalentSphere.Services.Interfaces;
 
 namespace TalentSphere.Controllers
 {
     [ApiController]
     [Route("api/roles")]
+    [Authorize(Roles = "Admin")]
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _service;
+        private readonly AuditLogHelper _auditLogHelper;
 
-        public RolesController(IRoleService service)
+        public RolesController(IRoleService service, AuditLogHelper auditLogHelper)
         {
             _service = service;
+            _auditLogHelper = auditLogHelper;
         }
 
         [HttpPost]
@@ -25,6 +30,11 @@ namespace TalentSphere.Controllers
                     return BadRequest(ModelState);
 
                 var role = await _service.CreateAsync(dto);
+
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Create", "Role", $"Role '{dto.Name}' created");
+
                 return CreatedAtAction(nameof(GetById), new { id = role.RoleID }, role);
             }
             catch (InvalidOperationException ex)
@@ -54,6 +64,7 @@ namespace TalentSphere.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,HR,Recruiter,Manager")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -78,6 +89,11 @@ namespace TalentSphere.Controllers
                 var updated = await _service.UpdateAsync(id, dto);
                 if (updated == null)
                     return NotFound(new { message = $"Role with ID {id} not found." });
+
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Update", "Role", $"Role {id} updated");
+
                 return Ok(new { message = "Role updated successfully.", data = updated });
             }
             catch (System.Exception ex)
@@ -94,6 +110,11 @@ namespace TalentSphere.Controllers
                 var deleted = await _service.DeleteAsync(id);
                 if (!deleted)
                     return NotFound(new { message = $"Role with ID {id} not found." });
+
+                var userId = _auditLogHelper.ExtractUserIdFromContext(HttpContext);
+                if (userId.HasValue)
+                    await _auditLogHelper.LogActionAsync(userId.Value, "Delete", "Role", $"Role {id} deleted");
+
                 return Ok(new { message = "Role deleted successfully." });
             }
             catch (System.Exception ex)

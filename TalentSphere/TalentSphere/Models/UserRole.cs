@@ -1,10 +1,8 @@
 using System;
-using System;
 
 namespace TalentSphere.Models
 {
     public class UserRole
-
     {
         public int UserRoleId { get; set; }
 

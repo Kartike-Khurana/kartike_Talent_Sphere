@@ -1,9 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using TalentSphere.Models;
 using TalentSphere.Enums;
-using TalentSphere.DTOs;
 
 namespace TalentSphere.Models
 {

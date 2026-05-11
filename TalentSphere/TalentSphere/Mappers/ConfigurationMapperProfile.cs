@@ -77,8 +77,18 @@ namespace TalentSphere.Mappers
                 .ForMember(dest => dest.ManagerID, opt => opt.Ignore());
 
             CreateMap<UpdatePerformanceReviewDTO, PerformanceReview>()
-                .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.Rating != null ? (decimal)src.Rating.Value : 0))
-                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.ReviewDate ?? DateTime.UtcNow))
+                // Only update Score if Rating was explicitly provided — avoids resetting to 0 on partial updates
+                .ForMember(dest => dest.Score,
+                    opt => {
+                        opt.PreCondition(src => src.Rating.HasValue);
+                        opt.MapFrom(src => (decimal)src.Rating!.Value);
+                    })
+                // Only update Date if ReviewDate was explicitly provided
+                .ForMember(dest => dest.Date,
+                    opt => {
+                        opt.PreCondition(src => src.ReviewDate.HasValue);
+                        opt.MapFrom(src => src.ReviewDate!.Value);
+                    })
                 .ForMember(dest => dest.ReviewID, opt => opt.Ignore())
                 .ForMember(dest => dest.EmployeeID, opt => opt.Ignore())
                 .ForMember(dest => dest.ManagerID, opt => opt.Ignore())

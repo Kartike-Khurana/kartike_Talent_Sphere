@@ -64,10 +64,23 @@ namespace TalentSphere.Controllers
         {
             try
             {
-                var eligibleRoles = new[] { "HR", "Manager", "Recruiter" };
-                var users = await _userRoleRepository.GetUsersByRolesAsync(eligibleRoles);
-                var dtos = _mapper.Map<IEnumerable<UserResponseDto>>(users);
-                return Ok(new { message = "Eligible interviewers retrieved successfully.", data = dtos });
+                var eligibleRoles = new HashSet<string>(
+                    new[] { "HR", "Manager", "Recruiter" },
+                    StringComparer.OrdinalIgnoreCase);
+
+                // Use the same service paths that GetAll / UserRoles endpoints already use —
+                // avoids any EF Core enum-converter translation issues in the repository layer.
+                var allUserRoles = await _userRoleService.GetAllAsync();
+                var eligibleUserIds = allUserRoles
+                    .Where(ur => !ur.IsDeleted && eligibleRoles.Contains(ur.RoleName ?? string.Empty))
+                    .Select(ur => ur.UserId)
+                    .ToHashSet();
+
+                var allUsers = await _userService.GetAllAsync();
+                var interviewers = allUsers
+                    .Where(u => !u.IsDeleted && u.Status == UserStatus.Active && eligibleUserIds.Contains(u.UserID));
+
+                return Ok(new { message = "Eligible interviewers retrieved successfully.", data = interviewers });
             }
             catch (System.Exception ex)
             {

@@ -13,6 +13,7 @@ namespace TalentSphere.Services
     {
         private readonly IInterviewRepository _interviewRepository;
         private readonly IApplicationRepository _applicationRepository;
+        private readonly IScreeningRepository _screeningRepository;
         private readonly INotificationService _notificationService;
         private readonly IMapper _mapper;
         private readonly ILogger<InterviewService> _logger;
@@ -20,12 +21,14 @@ namespace TalentSphere.Services
         public InterviewService(
             IInterviewRepository interviewRepository,
             IApplicationRepository applicationRepository,
+            IScreeningRepository screeningRepository,
             INotificationService notificationService,
             IMapper mapper,
             ILogger<InterviewService> logger)
         {
             _interviewRepository = interviewRepository;
             _applicationRepository = applicationRepository;
+            _screeningRepository = screeningRepository;
             _notificationService = notificationService;
             _mapper = mapper;
             _logger = logger;
@@ -83,6 +86,14 @@ namespace TalentSphere.Services
 
             if (application.Status == ApplicationStatus.Rejected)
                 throw new InvalidOperationException("Cannot schedule an interview for a rejected application.");
+
+            var screening = await _screeningRepository.GetByApplicationIdAsync(dto.ApplicationID);
+            if (screening == null || screening.Result != ScreeningResult.Pass)
+                throw new InvalidOperationException("A screening with a 'Pass' result is required before an interview can be scheduled.");
+
+            var existing = await _interviewRepository.GetByApplicationIdAsync(dto.ApplicationID);
+            if (existing.Any(i => i.Status != InterviewStatus.Cancelled))
+                throw new InvalidOperationException("An interview has already been scheduled for this application. Cancel the existing interview before scheduling a new one.");
 
             var interview = new Interview
             {

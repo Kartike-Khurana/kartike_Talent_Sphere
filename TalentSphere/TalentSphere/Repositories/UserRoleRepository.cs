@@ -67,18 +67,30 @@ namespace TalentSphere.Repositories
 
         public async Task<IEnumerable<User>> GetUsersByRolesAsync(IEnumerable<string> roleNames)
         {
-            return await _context.Set<UserRole>()
-                .Include(ur => ur.Role)
+            var roleNameSet = new HashSet<string>(roleNames, StringComparer.OrdinalIgnoreCase);
+
+            // Resolve role IDs in memory — avoids EF Core failing to translate
+            // enum-with-string-converter comparisons to SQL.
+            var allRoles = await _context.Set<Role>().AsNoTracking().ToListAsync();
+            var roleIds = allRoles
+                .Where(r => !r.IsDeleted && roleNameSet.Contains(r.Name.ToString()))
+                .Select(r => r.RoleID)
+                .ToList();
+
+            if (!roleIds.Any()) return [];
+
+            // Integer IN-list — EF Core translates this trivially.
+            var userRoles = await _context.Set<UserRole>()
                 .Include(ur => ur.User)
-                .Where(ur =>
-                    !ur.IsDeleted &&
-                    !ur.User.IsDeleted &&
-                    ur.User.Status == Enums.UserStatus.Active &&
-                    roleNames.Contains(ur.Role.Name.ToString()))
-                .Select(ur => ur.User)
-                .Distinct()
+                .Where(ur => !ur.IsDeleted && roleIds.Contains(ur.RoleId))
                 .AsNoTracking()
                 .ToListAsync();
+
+            return userRoles
+                .Where(ur => !ur.User.IsDeleted && ur.User.Status == Enums.UserStatus.Active)
+                .Select(ur => ur.User)
+                .DistinctBy(u => u.UserID)
+                .ToList();
         }
     }
 }

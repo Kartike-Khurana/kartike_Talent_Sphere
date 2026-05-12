@@ -39,6 +39,10 @@ namespace TalentSphere.Services
                 throw new InvalidOperationException(
                     $"Cannot screen an application with status '{application.Status}'.");
 
+            var existingScreening = await _repository.GetByApplicationIdAsync(dto.ApplicationID);
+            if (existingScreening != null)
+                throw new InvalidOperationException("A screening already exists for this application. Update the existing screening instead of creating a new one.");
+
             var screening = _mapper.Map<Screening>(dto);
             screening.Date = DateTime.UtcNow;
             screening.CreatedAt = DateTime.UtcNow;

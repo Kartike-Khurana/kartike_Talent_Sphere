@@ -13,6 +13,7 @@ namespace TalentSphere.Services
     {
         private readonly ISelectionRepository _selectionRepository;
         private readonly IApplicationRepository _applicationRepository;
+        private readonly IInterviewRepository _interviewRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserRoleRepository _userRoleRepository;
         private readonly IRoleRepository _roleRepository;
@@ -23,6 +24,7 @@ namespace TalentSphere.Services
         public SelectionService(
             ISelectionRepository selectionRepository,
             IApplicationRepository applicationRepository,
+            IInterviewRepository interviewRepository,
             IEmployeeRepository employeeRepository,
             IUserRoleRepository userRoleRepository,
             IRoleRepository roleRepository,
@@ -32,6 +34,7 @@ namespace TalentSphere.Services
         {
             _selectionRepository = selectionRepository;
             _applicationRepository = applicationRepository;
+            _interviewRepository = interviewRepository;
             _employeeRepository = employeeRepository;
             _userRoleRepository = userRoleRepository;
             _roleRepository = roleRepository;
@@ -92,7 +95,12 @@ namespace TalentSphere.Services
             if (application.Status == ApplicationStatus.Rejected)
                 throw new InvalidOperationException("Application is already rejected and cannot receive a new decision.");
 
-            // 2. Prevent duplicate selection records for the same application
+            // 2. Require a passed interview before a selection can be made
+            var interviews = await _interviewRepository.GetByApplicationIdAsync(dto.ApplicationID);
+            if (!interviews.Any(i => i.Status == InterviewStatus.Passed))
+                throw new InvalidOperationException("A passed interview is required before making a selection decision.");
+
+            // 3. Prevent duplicate selection records for the same application
             var existing = await _selectionRepository.GetByApplicationIdAsync(dto.ApplicationID);
             if (existing != null)
                 throw new InvalidOperationException($"A selection decision already exists for application {dto.ApplicationID}.");

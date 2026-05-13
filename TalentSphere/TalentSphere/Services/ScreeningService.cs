@@ -35,7 +35,7 @@ namespace TalentSphere.Services
             var application = await _applicationRepository.GetByIdWithDetailsAsync(dto.ApplicationID)
                 ?? throw new KeyNotFoundException($"Application {dto.ApplicationID} not found.");
 
-            if (application.Status == ApplicationStatus.Rejected || application.Status == ApplicationStatus.Accepted)
+            if (application.Status == ApplicationStatus.Rejected)
                 throw new InvalidOperationException(
                     $"Cannot screen an application with status '{application.Status}'.");
 

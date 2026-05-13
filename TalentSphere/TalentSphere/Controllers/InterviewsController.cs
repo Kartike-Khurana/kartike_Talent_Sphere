@@ -43,7 +43,7 @@ namespace TalentSphere.Controllers
 
                 return CreatedAtAction(nameof(GetInterviewById), new { id = result.InterviewID }, new
                 {
-                    message = "Interview scheduled successfully. Candidate has been notified.",
+                    message = "Interview scheduled successfully. Candidate and interviewer have been notified.",
                     data = result
                 });
             }

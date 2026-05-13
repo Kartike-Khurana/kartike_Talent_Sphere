@@ -210,22 +210,45 @@ namespace TalentSphere.Services
 
         private async Task SendInterviewScheduledNotificationAsync(Application application, Interview interview)
         {
+            var jobTitle = application.Job?.Title ?? "the position";
+            var candidateName = application.Candidate?.Name ?? "the candidate";
+            var whenText = $"{interview.Date:dddd, MMMM dd yyyy} at {interview.Time:HH:mm}";
+            var locationSuffix = !string.IsNullOrWhiteSpace(interview.Location) ? $" — {interview.Location}" : ".";
+
+            // Candidate notification
             try
             {
-                var message = $"Your interview for '{application.Job?.Title}' has been scheduled on {interview.Date:dddd, MMMM dd yyyy} at {interview.Time:HH:mm}" +
-                              (interview.Location != null ? $" — {interview.Location}" : ".");
+                var candidateMessage = $"Your interview for '{jobTitle}' has been scheduled on {whenText}{locationSuffix}";
 
                 await _notificationService.CreateNotificationAsync(new CreateNotificationDTO
                 {
                     UserID = application.CandidateID,
                     EntityID = interview.InterviewID,
-                    Message = message,
+                    Message = candidateMessage,
                     Category = NotificationCategory.Interview
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send interview scheduled notification for interview {InterviewID}", interview.InterviewID);
+                _logger.LogError(ex, "Failed to send interview scheduled notification to candidate for interview {InterviewID}", interview.InterviewID);
+            }
+
+            // Interviewer notification
+            try
+            {
+                var interviewerMessage = $"You have been scheduled to interview {candidateName} for '{jobTitle}' on {whenText}{locationSuffix}";
+
+                await _notificationService.CreateNotificationAsync(new CreateNotificationDTO
+                {
+                    UserID = interview.InterviewerID,
+                    EntityID = interview.InterviewID,
+                    Message = interviewerMessage,
+                    Category = NotificationCategory.Interview
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send interview scheduled notification to interviewer for interview {InterviewID}", interview.InterviewID);
             }
         }
 

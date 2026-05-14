@@ -11,6 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TalentSphere.Tests\**" />
+    <Content Remove="TalentSphere.Tests\**" />
+    <EmbeddedResource Remove="TalentSphere.Tests\**" />
+    <None Remove="TalentSphere.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
